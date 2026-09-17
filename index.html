@@ -28,26 +28,21 @@
         min-height: 450px; 
       }
       
-      #loading-overlay {
-        position: absolute;
-        inset: 0;
-        background-color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 50;
-      }
-
       .fc { height: 100% !important; font-size: 0.85rem; }
       .fc-toolbar-title { font-size: 1.6rem !important; font-weight: bold; color: #1e293b; }
       
+      /* 曜日ヘッダーの色 */
       .fc-col-header-cell-cushion { color: #475569; text-decoration: none; font-weight: bold; padding: 6px 0 !important; }
       .fc-day-sun .fc-col-header-cell-cushion { color: #ef4444; }
       .fc-day-sat .fc-col-header-cell-cushion { color: #3b82f6; }
 
+      /* 日曜日の日付数字を赤色に */
       .fc-day-sun .fc-daygrid-day-number { color: #ef4444 !important; }
+      
+      /* 土曜日の日付数字を青色に */
       .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
 
+      /* 日付数字のレイアウトとサイズ調整 */
       .fc-daygrid-day-top {
         display: flex;
         justify-content: center;
@@ -60,6 +55,7 @@
         float: none !important;
       }
 
+      /* イベントバッジのデザイン */
       .fc-daygrid-event {
         background-color: #dcfce7 !important;
         border: 1px solid #4ade80 !important;
@@ -79,16 +75,19 @@
   </head>
   <body class="bg-base-200">
 
-    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative overflow-hidden">
+    <!-- カレンダーカード -->
+    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative">
       
-      <!-- ローディング（完全に文字なし、くるくるスピナーのみ） -->
-      <div id="loading-overlay">
+      <!-- くるくるスピナー（文字なし、スピナーのみ） -->
+      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100 z-20 rounded-box">
         <span class="loading loading-spinner loading-lg text-success"></span>
       </div>
 
-      <div id="calendar"></div>
+      <!-- カレンダー本体 -->
+      <div id="calendar" class="w-full h-full"></div>
     </div>
 
+    <!-- 選択時の詳細エリア -->
     <div id="event-detail-area" class="flex-shrink-0 px-1 sm:px-0 mb-1">
       <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-sm border border-base-300">
         日付や予定をタップすると出欠席の操作ができます
@@ -97,17 +96,18 @@
 
     <script>
       const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxricXsnjpfBfNgmbmLLESqnLVn-bvEm3xbuAVls2Y7SDh3S-h9Eaxuc8L8Ygqn8WmcBg/exec';
-      const LIFF_ID = 'あなたのLIFF_ID';
+      const LIFF_ID = '2011647105-JVOWW7Tw'; // ご自身のLIFF IDに書き換えてください
 
-      let userProfile = null;
+      let userProfile = null; // LINEのユーザー情報を保持する変数
 
       document.addEventListener('DOMContentLoaded', function() {
+        // 1. LIFFの初期化とユーザー情報の取得
         liff.init({ liffId: LIFF_ID }).then(() => {
           if (!liff.isLoggedIn()) {
             liff.login();
           } else {
             liff.getProfile().then(profile => {
-              userProfile = profile;
+              userProfile = profile; 
             }).catch(err => console.error('Profile fetch failed', err));
           }
         }).catch(err => {
@@ -115,7 +115,6 @@
         });
 
         const calendarEl = document.getElementById('calendar');
-        const loadingOverlay = document.getElementById('loading-overlay');
         
         const calendar = new FullCalendar.Calendar(calendarEl, {
           initialView: 'dayGridMonth',
@@ -127,16 +126,18 @@
           },
           height: '100%',
           events: function(fetchInfo, successCallback, failureCallback) {
-            loadingOverlay.style.display = 'flex';
+            const spinner = document.getElementById('loading-spinner');
+            if (spinner) spinner.style.display = 'flex'; // 読み込み開始でスピナーを表示
 
+            // GASのAPIからイベントデータを取得
             fetch(GAS_API_URL)
               .then(response => response.json())
               .then(data => {
-                loadingOverlay.style.display = 'none';
+                if (spinner) spinner.style.display = 'none'; // 取得成功でスピナーを非表示
                 successCallback(data);
               })
               .catch(error => {
-                loadingOverlay.style.display = 'none';
+                if (spinner) spinner.style.display = 'none'; // エラー時も非表示
                 console.error('Error fetching events:', error);
                 failureCallback(error);
               });
@@ -160,6 +161,7 @@
         calendar.render();
       });
 
+      // マス目内の日付から「日」を消去する関数
       function removeDayText() {
         setTimeout(() => {
           const dayNumbers = document.querySelectorAll('.fc-daygrid-day-number');
@@ -171,6 +173,7 @@
         }, 10);
       }
 
+      // 詳細カード用の日付フォーマット（「日」なし）
       function formatDateWithoutDay(dateStr) {
         const parts = dateStr.split('-');
         if (parts.length === 3) {
@@ -193,6 +196,7 @@
         `;
       }
 
+      // 「出欠席」ボタンを押したときの処理
       function openAttendanceModal(dateStr, title) {
         if (!userProfile) {
           alert('LINEのユーザー情報を取得中です。少し待ってからもう一度お試しください。');
@@ -211,6 +215,7 @@
         submitAttendance(attendanceData);
       }
 
+      // GASのAPIへデータをPOSTする関数
       function submitAttendance(data) {
         fetch(GAS_API_URL, {
           method: 'POST',
