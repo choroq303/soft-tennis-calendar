@@ -12,28 +12,29 @@
   </head>
   <body class="bg-base-200 min-h-screen flex flex-col p-3 max-w-md mx-auto">
 
-    <!-- ヘッダー（月切り替え） -->
-    <div class="card bg-base-100 shadow-sm p-3 mb-3 flex flex-row justify-between items-center">
-      <button onclick="changeMonth(-1)" class="btn btn-sm btn-outline">◀ 前月</button>
-      <h1 id="month-title" class="text-lg font-bold text-slate-800">2026年 9月</h1>
-      <button onclick="changeMonth(1)" class="btn btn-sm btn-outline">次月 ▶</button>
-    </div>
-
-    <!-- ローディング表示用エリア -->
-    <div id="loading-area" class="card bg-base-100 shadow-sm p-12 text-center flex flex-col items-center justify-center mb-3">
+    <!-- 全画面ローディング（データとLINE情報が揃うまでこれを出し続ける） -->
+    <div id="loading-screen" class="fixed inset-0 bg-base-200 z-50 flex flex-col items-center justify-center p-4">
       <span class="loading loading-spinner loading-lg text-success"></span>
-      <p class="text-xs text-gray-500 mt-3 font-bold">予定を読み込んでいます...</p>
+      <p id="loading-text" class="text-sm text-slate-600 mt-3 font-bold">読み込んでいます...</p>
     </div>
 
-    <!-- 予定リストエリア（最初は非表示にしておく） -->
-    <div id="content-area" class="hidden flex-1 space-y-2 mb-3">
-      <div id="event-list" class="space-y-2"></div>
-    </div>
+    <!-- メインコンテンツ（最初は非表示） -->
+    <div id="main-content" class="hidden flex-1 flex flex-col">
+      <!-- ヘッダー（月切り替え） -->
+      <div class="card bg-base-100 shadow-sm p-3 mb-3 flex flex-row justify-between items-center">
+        <button onclick="changeMonth(-1)" class="btn btn-sm btn-outline">◀ 前月</button>
+        <h1 id="month-title" class="text-lg font-bold text-slate-800">2026年 9月</h1>
+        <button onclick="changeMonth(1)" class="btn btn-sm btn-outline">次月 ▶</button>
+      </div>
 
-    <!-- 詳細・操作エリア -->
-    <div id="event-detail-area">
-      <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-400 text-xs border border-base-300">
-        予定をタップすると出欠席の操作ができます
+      <!-- 予定リストエリア -->
+      <div id="event-list" class="flex-1 space-y-2 mb-3"></div>
+
+      <!-- 詳細・操作エリア -->
+      <div id="event-detail-area">
+        <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-400 text-xs border border-base-300">
+          予定をタップすると出欠席の操作ができます
+        </div>
       </div>
     </div>
 
@@ -46,57 +47,60 @@
       let currentDate = new Date(2026, 8, 1); // 初期表示：2026年9月
 
       document.addEventListener('DOMContentLoaded', function() {
-        // 1. LIFFの初期化
-        liff.init({ liffId: LIFF_ID }).then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-          } else {
-            liff.getProfile().then(profile => {
-              userProfile = profile; 
-            }).catch(err => console.error('Profile fetch failed', err));
-          }
-        }).catch(err => {
-          console.log('LIFF Initialization failed.', err);
-        });
+        const loadingText = document.getElementById('loading-text');
+        
+        // 1. LINEのLIFF初期化＆プロフィール取得
+        const liffPromise = liff.init({ liffId: LIFF_ID })
+          .then(() => {
+            if (!liff.isLoggedIn()) {
+              liff.login();
+              return new Promise(() => {}); // ログインリダイレクト時はここで止める
+            } else {
+              loadingText.textContent = 'LINEの情報を取得中...';
+              return liff.getProfile();
+            }
+          })
+          .then(profile => {
+            userProfile = profile;
+          })
+          .catch(err => {
+            console.error('LIFF Error:', err);
+            // LINE外ブラウザなどでエラーになっても進めるようにする場合のフォールバック
+            userProfile = { userId: 'guest', displayName: 'ゲスト' };
+          });
 
-        // 2. イベントデータの取得
-        fetchEvents();
-      });
-
-      // GASからイベントを取得する関数
-      function fetchEvents() {
-        const loadingArea = document.getElementById('loading-area');
-        const contentArea = document.getElementById('content-area');
-
-        // 確実にスピナーを表示状態にする
-        loadingArea.classList.remove('hidden');
-        contentArea.classList.add('hidden');
-
-        fetch(GAS_API_URL, { cache: 'no-store' })
+        // 2. GASからの予定データ取得
+        loadingText.textContent = '予定を読み込んでいます...';
+        const fetchPromise = fetch(GAS_API_URL, { cache: 'no-store' })
           .then(response => response.json())
           .then(data => {
             allEvents = data.map(item => ({
               date: item.start || item.date,
               title: item.title || '練習'
             }));
-            
-            // 取得完了したらスピナーを隠して中身を表示
-            loadingArea.classList.add('hidden');
-            contentArea.classList.remove('hidden');
-            
+          })
+          .catch(error => {
+            console.error('Fetch Error:', error);
+            throw new Error('予定の取得に失敗しました。');
+          });
+
+        // 【重要】LINE情報とGASデータの「両方」の完了を完璧に待つ
+        Promise.all([liffPromise, fetchPromise])
+          .then(() => {
+            // 両方揃ったらローディングを消してメイン画面を表示
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
             renderCalendar();
           })
           .catch(error => {
-            loadingArea.classList.add('hidden');
-            console.error('Error fetching events:', error);
-            document.getElementById('event-list').innerHTML = `
-              <div class="card bg-base-100 p-4 text-center text-error text-sm">
-                予定の取得に失敗しました。
+            document.getElementById('loading-screen').innerHTML = `
+              <div class="text-error font-bold text-center p-4">
+                エラーが発生しました<br>
+                <span class="text-xs text-slate-500 font-normal">${error.message}</span>
               </div>
             `;
-            contentArea.classList.remove('hidden');
           });
-      }
+      });
 
       // 月を切り替えるボタンの処理
       function changeMonth(direction) {
@@ -179,7 +183,7 @@
       // 出欠席データをGASへ送信
       function submitAttendance(dateStr, title, status) {
         if (!userProfile) {
-          alert('LINEのユーザー情報を取得中です。少し待ってからもう一度お試しください。');
+          alert('LINEのユーザー情報が取得できていません。');
           return;
         }
 
