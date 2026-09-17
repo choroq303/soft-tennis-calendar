@@ -23,7 +23,6 @@
         flex-direction: column;
         padding: 6px;
       }
-      /* カレンダー領域の高さとレイアウトを確実に固定・確保 */
       .calendar-card {
         flex: 1;
         display: flex;
@@ -82,11 +81,11 @@
   </head>
   <body class="bg-base-200">
 
-    <!-- カレンダーカード（calendar-cardクラスで高さを確実に確保） -->
+    <!-- カレンダーカード -->
     <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 calendar-card rounded-none sm:rounded-box relative">
       
-      <!-- くるくるスピナー（最初から非表示にしてカレンダーを隠さない） -->
-      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100/90 z-20 rounded-box" style="display: none;">
+      <!-- くるくるスピナー（最初から「表示（flex）」にしておくことで、読み込み始めから確実に回す） -->
+      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100 z-20 rounded-box">
         <span class="loading loading-spinner loading-lg text-success"></span>
       </div>
 
@@ -134,17 +133,18 @@
           height: '100%',
           events: function(fetchInfo, successCallback, failureCallback) {
             const spinner = document.getElementById('loading-spinner');
-            if (spinner) spinner.style.display = 'flex'; // 読み込み中にスピナーを表示
+            if (spinner) spinner.style.display = 'flex'; // 月移動などで再取得するときも念のため表示
 
             // GASのAPIからイベントデータを取得
             fetch(GAS_API_URL)
               .then(response => response.json())
               .then(data => {
-                if (spinner) spinner.style.display = 'none'; // 取得成功で非表示
+                // 取得成功したら、ここで初めてスピナーを完全に消す
+                if (spinner) spinner.style.display = 'none';
                 successCallback(data);
               })
               .catch(error => {
-                if (spinner) spinner.style.display = 'none'; // エラー時も非表示
+                if (spinner) spinner.style.display = 'none';
                 console.error('Error fetching events:', error);
                 failureCallback(error);
               });
