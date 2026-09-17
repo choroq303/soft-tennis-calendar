@@ -19,15 +19,14 @@
       <button onclick="changeMonth(1)" class="btn btn-sm btn-outline">次月 ▶</button>
     </div>
 
-    <!-- 予定リストエリア（min-h-[350px] を追加して高さが潰れるのを防ぐ） -->
-    <div class="relative flex-1 mb-3 min-h-[350px]">
-      <!-- くるくるスピナー -->
-      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center bg-base-100 z-20 rounded-box shadow-sm">
-        <span class="loading loading-spinner loading-lg text-success"></span>
-        <p class="text-xs text-gray-500 mt-2 font-bold">読み込んでいます...</p>
-      </div>
+    <!-- ローディング表示用エリア -->
+    <div id="loading-area" class="card bg-base-100 shadow-sm p-12 text-center flex flex-col items-center justify-center mb-3">
+      <span class="loading loading-spinner loading-lg text-success"></span>
+      <p class="text-xs text-gray-500 mt-3 font-bold">予定を読み込んでいます...</p>
+    </div>
 
-      <!-- リスト本体 -->
+    <!-- 予定リストエリア（最初は非表示にしておく） -->
+    <div id="content-area" class="hidden flex-1 space-y-2 mb-3">
       <div id="event-list" class="space-y-2"></div>
     </div>
 
@@ -66,8 +65,12 @@
 
       // GASからイベントを取得する関数
       function fetchEvents() {
-        const spinner = document.getElementById('loading-spinner');
-        if (spinner) spinner.style.display = 'flex'; // 確実に表示
+        const loadingArea = document.getElementById('loading-area');
+        const contentArea = document.getElementById('content-area');
+
+        // 確実にスピナーを表示状態にする
+        loadingArea.classList.remove('hidden');
+        contentArea.classList.add('hidden');
 
         fetch(GAS_API_URL, { cache: 'no-store' })
           .then(response => response.json())
@@ -77,18 +80,21 @@
               title: item.title || '練習'
             }));
             
-            // 取得完了したらスピナーを消す
-            if (spinner) spinner.style.display = 'none';
+            // 取得完了したらスピナーを隠して中身を表示
+            loadingArea.classList.add('hidden');
+            contentArea.classList.remove('hidden');
+            
             renderCalendar();
           })
           .catch(error => {
-            if (spinner) spinner.style.display = 'none';
+            loadingArea.classList.add('hidden');
             console.error('Error fetching events:', error);
             document.getElementById('event-list').innerHTML = `
               <div class="card bg-base-100 p-4 text-center text-error text-sm">
                 予定の取得に失敗しました。
               </div>
             `;
+            contentArea.classList.remove('hidden');
           });
       }
 
