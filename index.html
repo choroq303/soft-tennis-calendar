@@ -23,9 +23,16 @@
         flex-direction: column;
         padding: 6px;
       }
+      /* カレンダー領域の高さとレイアウトを確実に固定・確保 */
+      .calendar-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 500px;
+      }
       #calendar { 
         flex: 1;
-        min-height: 450px; 
+        width: 100%;
       }
       
       .fc { height: 100% !important; font-size: 0.85rem; }
@@ -75,16 +82,16 @@
   </head>
   <body class="bg-base-200">
 
-    <!-- カレンダーカード -->
-    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative">
+    <!-- カレンダーカード（calendar-cardクラスで高さを確実に確保） -->
+    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 calendar-card rounded-none sm:rounded-box relative">
       
-      <!-- くるくるスピナー（文字なし、スピナーのみ） -->
-      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100 z-20 rounded-box">
+      <!-- くるくるスピナー（最初から非表示にしてカレンダーを隠さない） -->
+      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100/90 z-20 rounded-box" style="display: none;">
         <span class="loading loading-spinner loading-lg text-success"></span>
       </div>
 
       <!-- カレンダー本体 -->
-      <div id="calendar" class="w-full h-full"></div>
+      <div id="calendar"></div>
     </div>
 
     <!-- 選択時の詳細エリア -->
@@ -96,9 +103,9 @@
 
     <script>
       const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxricXsnjpfBfNgmbmLLESqnLVn-bvEm3xbuAVls2Y7SDh3S-h9Eaxuc8L8Ygqn8WmcBg/exec';
-      const LIFF_ID = '2011647105-JVOWW7Tw'; // ご自身のLIFF IDに書き換えてください
+      const LIFF_ID = '2011647105-JVOWW7Tw';
 
-      let userProfile = null; // LINEのユーザー情報を保持する変数
+      let userProfile = null;
 
       document.addEventListener('DOMContentLoaded', function() {
         // 1. LIFFの初期化とユーザー情報の取得
@@ -127,13 +134,13 @@
           height: '100%',
           events: function(fetchInfo, successCallback, failureCallback) {
             const spinner = document.getElementById('loading-spinner');
-            if (spinner) spinner.style.display = 'flex'; // 読み込み開始でスピナーを表示
+            if (spinner) spinner.style.display = 'flex'; // 読み込み中にスピナーを表示
 
             // GASのAPIからイベントデータを取得
             fetch(GAS_API_URL)
               .then(response => response.json())
               .then(data => {
-                if (spinner) spinner.style.display = 'none'; // 取得成功でスピナーを非表示
+                if (spinner) spinner.style.display = 'none'; // 取得成功で非表示
                 successCallback(data);
               })
               .catch(error => {
