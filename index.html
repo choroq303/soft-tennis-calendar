@@ -79,13 +79,12 @@
   </head>
   <body class="bg-base-200">
 
-    <!-- カレンダーカード（親要素の不要なflex中央寄せを削除し、relativeだけ残す） -->
+    <!-- カレンダーカード -->
     <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative">
       
-      <!-- くるくるスピナー（初期状態：flexでしっかり中央に表示） -->
-      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-base-100 z-20 rounded-box">
+      <!-- くるくるスピナー（文字をなくしてスピナーだけにしました） -->
+      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100 z-20 rounded-box">
         <span class="loading loading-spinner loading-lg text-success"></span>
-        <span class="text-sm text-slate-400">カレンダーを読み込んでいます...</span>
       </div>
 
       <!-- カレンダー本体 -->
