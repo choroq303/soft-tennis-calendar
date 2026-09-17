@@ -79,13 +79,16 @@
   </head>
   <body class="bg-base-200">
 
-    <!-- カレンダーカード（ローディングスピナー内蔵） -->
-    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative flex items-center justify-center">
-      <!-- くるくるスピナー（初期状態） -->
-      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-base-100 z-10">
+    <!-- カレンダーカード（親要素の不要なflex中央寄せを削除し、relativeだけ残す） -->
+    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative">
+      
+      <!-- くるくるスピナー（初期状態：flexでしっかり中央に表示） -->
+      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-base-100 z-20 rounded-box">
         <span class="loading loading-spinner loading-lg text-success"></span>
         <span class="text-sm text-slate-400">カレンダーを読み込んでいます...</span>
       </div>
+
+      <!-- カレンダー本体 -->
       <div id="calendar" class="w-full h-full"></div>
     </div>
 
@@ -109,7 +112,7 @@
             liff.login();
           } else {
             liff.getProfile().then(profile => {
-              userProfile = profile; // ログイン中のユーザー情報を取得成功！
+              userProfile = profile; 
             }).catch(err => console.error('Profile fetch failed', err));
           }
         }).catch(err => {
@@ -129,7 +132,7 @@
           height: '100%',
           events: function(fetchInfo, successCallback, failureCallback) {
             const spinner = document.getElementById('loading-spinner');
-            if (spinner) spinner.style.display = 'flex'; // 読み込み開始時にスピナーを表示
+            if (spinner) spinner.style.display = 'flex'; // 確実に表示
 
             // GASのAPIからイベントデータを取得
             fetch(GAS_API_URL)
@@ -151,8 +154,6 @@
             const clickedEvent = calendar.getEvents().find(ev => ev.startStr === info.dateStr);
             if (clickedEvent) {
               showDetail(info.dateStr, clickedEvent.title);
-            } else {
-              // 予定がない日をタップした場合など
             }
           },
           datesSet: function() {
@@ -198,14 +199,13 @@
         `;
       }
 
-      // 「出欠席」ボタンを押したときの処理（確認ダイアログ ＋ GASへPOST送信）
+      // 「出欠席」ボタンを押したときの処理
       function openAttendanceModal(dateStr, title) {
         if (!userProfile) {
           alert('LINEのユーザー情報を取得中です。少し待ってからもう一度お試しください。');
           return;
         }
 
-        // OK = 出席、キャンセル = 欠席
         const isAttending = confirm(`${userProfile.displayName} さん\n${formatDateWithoutDay(dateStr)} (${title})\n\n「OK」で出席、「キャンセル」で欠席として登録します`);
         
         const attendanceData = {
