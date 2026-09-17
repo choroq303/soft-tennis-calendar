@@ -19,10 +19,10 @@
       <button onclick="changeMonth(1)" class="btn btn-sm btn-outline">次月 ▶</button>
     </div>
 
-    <!-- 予定リストエリア（relativeにしてスピナーを中央に重ねられるようにする） -->
-    <div class="relative flex-1 mb-3">
-      <!-- くるくるスピナー（最初から表示状態にしておく） -->
-      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center bg-base-200/80 z-20 rounded-box">
+    <!-- 予定リストエリア（min-h-[350px] を追加して高さが潰れるのを防ぐ） -->
+    <div class="relative flex-1 mb-3 min-h-[350px]">
+      <!-- くるくるスピナー -->
+      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center bg-base-100 z-20 rounded-box shadow-sm">
         <span class="loading loading-spinner loading-lg text-success"></span>
         <p class="text-xs text-gray-500 mt-2 font-bold">読み込んでいます...</p>
       </div>
@@ -67,7 +67,7 @@
       // GASからイベントを取得する関数
       function fetchEvents() {
         const spinner = document.getElementById('loading-spinner');
-        if (spinner) spinner.style.display = 'flex'; // 確実にくるくるを表示
+        if (spinner) spinner.style.display = 'flex'; // 確実に表示
 
         fetch(GAS_API_URL, { cache: 'no-store' })
           .then(response => response.json())
