@@ -1,102 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>テニスサークルカレンダー</title>
+    <title>テニスサークル 予定＆出欠</title>
     <!-- Tailwind CSS & daisyUI CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/full.min.css" rel="stylesheet" type="text/css" />
-    <!-- FullCalendar CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <!-- LINE LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <style>
-      html, body { 
-        height: 100%;
-        margin: 0;
-        background-color: #f8fafc;
-        box-sizing: border-box;
-      }
-      body {
-        display: flex;
-        flex-direction: column;
-        padding: 6px;
-      }
-      .calendar-card {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 500px;
-      }
-      #calendar { 
-        flex: 1;
-        width: 100%;
-      }
-      
-      .fc { height: 100% !important; font-size: 0.85rem; }
-      .fc-toolbar-title { font-size: 1.6rem !important; font-weight: bold; color: #1e293b; }
-      
-      /* 曜日ヘッダーの色 */
-      .fc-col-header-cell-cushion { color: #475569; text-decoration: none; font-weight: bold; padding: 6px 0 !important; }
-      .fc-day-sun .fc-col-header-cell-cushion { color: #ef4444; }
-      .fc-day-sat .fc-col-header-cell-cushion { color: #3b82f6; }
-
-      /* 日曜日の日付数字を赤色に */
-      .fc-day-sun .fc-daygrid-day-number { color: #ef4444 !important; }
-      
-      /* 土曜日の日付数字を青色に */
-      .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
-
-      /* 日付数字のレイアウトとサイズ調整 */
-      .fc-daygrid-day-top {
-        display: flex;
-        justify-content: center;
-        padding-top: 4px;
-      }
-      .fc-daygrid-day-number { 
-        color: #0f172a; 
-        font-weight: 900 !important; 
-        font-size: 1.2rem !important; 
-        float: none !important;
-      }
-
-      /* イベントバッジのデザイン */
-      .fc-daygrid-event {
-        background-color: #dcfce7 !important;
-        border: 1px solid #4ade80 !important;
-        color: #166534 !important;
-        padding: 4px 6px !important;
-        border-radius: 6px !important;
-        font-size: 0.8rem !important;
-        font-weight: bold;
-        margin-top: 2px !important;
-      }
-      .fc-event-title {
-        white-space: normal !important;
-        overflow: hidden;
-        text-align: center;
-      }
-    </style>
   </head>
-  <body class="bg-base-200">
+  <body class="bg-base-200 min-h-screen flex flex-col p-3 max-w-md mx-auto">
 
-    <!-- カレンダーカード -->
-    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 calendar-card rounded-none sm:rounded-box relative">
-      
-      <!-- くるくるスピナー（最初から「表示（flex）」にしておくことで、読み込み始めから確実に回す） -->
-      <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-base-100 z-20 rounded-box">
-        <span class="loading loading-spinner loading-lg text-success"></span>
-      </div>
-
-      <!-- カレンダー本体 -->
-      <div id="calendar"></div>
+    <!-- ヘッダー（月切り替え） -->
+    <div class="card bg-base-100 shadow-sm p-3 mb-3 flex flex-row justify-between items-center">
+      <button onclick="changeMonth(-1)" class="btn btn-sm btn-outline">◀ 前月</button>
+      <h1 id="month-title" class="text-lg font-bold text-slate-800">2026年 9月</h1>
+      <button onclick="changeMonth(1)" class="btn btn-sm btn-outline">次月 ▶</button>
     </div>
 
-    <!-- 選択時の詳細エリア -->
-    <div id="event-detail-area" class="flex-shrink-0 px-1 sm:px-0 mb-1">
-      <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-sm border border-base-300">
-        日付や予定をタップすると出欠席の操作ができます
+    <!-- 予定リストエリア -->
+    <div id="event-list" class="flex-1 space-y-2 mb-3">
+      <!-- 読み込み中表示 -->
+      <div class="text-center py-10">
+        <span class="loading loading-spinner loading-lg text-success"></span>
+        <p class="text-xs text-gray-400 mt-2">予定を読み込んでいます...</p>
+      </div>
+    </div>
+
+    <!-- 詳細・操作エリア -->
+    <div id="event-detail-area">
+      <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-400 text-xs border border-base-300">
+        予定をタップすると出欠席の操作ができます
       </div>
     </div>
 
@@ -105,9 +40,11 @@
       const LIFF_ID = '2011647105-JVOWW7Tw';
 
       let userProfile = null;
+      let allEvents = []; // 取得した全イベントを保持
+      let currentDate = new Date(2026, 8, 1); // 初期表示：2026年9月 (月は0始まりなので8=9月)
 
       document.addEventListener('DOMContentLoaded', function() {
-        // 1. LIFFの初期化とユーザー情報の取得
+        // 1. LIFFの初期化
         liff.init({ liffId: LIFF_ID }).then(() => {
           if (!liff.isLoggedIn()) {
             liff.login();
@@ -120,118 +57,142 @@
           console.log('LIFF Initialization failed.', err);
         });
 
-        const calendarEl = document.getElementById('calendar');
-        
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'dayGridMonth',
-          locale: 'ja',
-          headerToolbar: {
-            left: 'prev',
-            center: 'title',
-            right: 'next'
-          },
-          height: '100%',
-          events: function(fetchInfo, successCallback, failureCallback) {
-            const spinner = document.getElementById('loading-spinner');
-            if (spinner) spinner.style.display = 'flex'; // 月移動などで再取得するときも念のため表示
-
-            // GASのAPIからイベントデータを取得
-            fetch(GAS_API_URL)
-              .then(response => response.json())
-              .then(data => {
-                // 取得成功したら、ここで初めてスピナーを完全に消す
-                if (spinner) spinner.style.display = 'none';
-                successCallback(data);
-              })
-              .catch(error => {
-                if (spinner) spinner.style.display = 'none';
-                console.error('Error fetching events:', error);
-                failureCallback(error);
-              });
-          },
-          eventClick: function(info) {
-            showDetail(info.event.startStr, info.event.title);
-          },
-          dateClick: function(info) {
-            const clickedEvent = calendar.getEvents().find(ev => ev.startStr === info.dateStr);
-            if (clickedEvent) {
-              showDetail(info.dateStr, clickedEvent.title);
-            } else {
-              showDetail(info.dateStr, '練習');
-            }
-          },
-          datesSet: function() {
-            removeDayText();
-          }
-        });
-        
-        calendar.render();
+        // 2. イベントデータの取得
+        fetchEvents();
       });
 
-      // マス目内の日付から「日」を消去する関数
-      function removeDayText() {
-        setTimeout(() => {
-          const dayNumbers = document.querySelectorAll('.fc-daygrid-day-number');
-          dayNumbers.forEach(elem => {
-            if (elem.textContent.includes('日')) {
-              elem.textContent = elem.textContent.replace('日', '');
-            }
+      // GASからイベントを取得する関数
+      function fetchEvents() {
+        fetch(GAS_API_URL, { cache: 'no-store' })
+          .then(response => response.json())
+          .then(data => {
+            // FullCalendar形式（{ title, start, ... }）を想定して整形
+            allEvents = data.map(item => ({
+              date: item.start || item.date, // 'YYYY-MM-DD'
+              title: item.title || '練習'
+            }));
+            renderCalendar();
+          })
+          .catch(error => {
+            console.error('Error fetching events:', error);
+            document.getElementById('event-list').innerHTML = `
+              <div class="card bg-base-100 p-4 text-center text-error text-sm">
+                予定の取得に失敗しました。
+              </div>
+            `;
           });
-        }, 10);
       }
 
-      // 詳細カード用の日付フォーマット（「日」なし）
-      function formatDateWithoutDay(dateStr) {
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-          return Number(parts[0]) + '年 ' + Number(parts[1]) + '月 ' + Number(parts[2]);
+      // 月を切り替えるボタンの処理
+      function changeMonth(direction) {
+        currentDate.setMonth(currentDate.getMonth() + direction);
+        renderCalendar();
+      }
+
+      // 画面描画関数
+      function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth(); // 0-11
+        
+        // タイトル更新
+        document.getElementById('month-title').textContent = `${year}年 ${month + 1}月`;
+
+        // 今月の初日から末日までの日付リストを生成
+        const listContainer = document.getElementById('event-list');
+        listContainer.innerHTML = '';
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+        let hasEventInMonth = false;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateObj = new Date(year, month, day);
+          const yearStr = year;
+          const monthStr = String(month + 1).padStart(2, '0');
+          const dayStr = String(day).padStart(2, '0');
+          const dateString = `${yearStr}-${monthStr}-${dayStr}`;
+          const dayOfWeek = dayNames[dateObj.getDay()];
+
+          // この日の予定があるか探す
+          const event = allEvents.find(ev => ev.date === dateString);
+
+          // 週末（土日）または予定がある日だけを表示する（すべての日を出したい場合は条件を外してください）
+          // ここでは「予定がある日」をメインに、あるいは1ヶ月全日出すか。今回はシンプルに全日、または予定がある日をハイライト
+          // サークル用なので「予定がある日」をピックアップしてカードにする形式がスッキリします！
+          if (event) {
+            hasEventInMonth = true;
+            const isSun = (dateObj.getDay() === 0);
+            const isSat = (dateObj.getDay() === 6);
+            const colorClass = isSun ? 'text-red-500' : (isSat ? 'text-blue-500' : 'text-slate-700');
+
+            const card = document.createElement('div');
+            card.className = "card bg-base-100 shadow-sm p-3 border-l-4 border-success flex flex-row justify-between items-center cursor-pointer hover:bg-base-200 transition-colors";
+            card.onclick = () => showDetail(dateString, event.title);
+            card.innerHTML = `
+              <div>
+                <div class="font-bold text-base ${colorClass}">${month + 1}月 ${day}日 (${dayOfWeek})</div>
+                <div class="text-sm text-slate-600 mt-0.5">🎾 ${event.title}</div>
+              </div>
+              <button class="btn btn-success btn-xs text-white font-bold">出欠席</button>
+            `;
+            listContainer.appendChild(card);
+          }
         }
-        return dateStr;
+
+        if (!hasEventInMonth) {
+          listContainer.innerHTML = `
+            <div class="card bg-base-100 p-6 text-center text-gray-400 text-sm">
+              今月の予定はありません
+            </div>
+          `;
+        }
       }
 
+      // 詳細・操作エリアの表示
       function showDetail(dateStr, title) {
-        const formattedDate = formatDateWithoutDay(dateStr);
+        const parts = dateStr.split('-');
+        const formattedDate = `${Number(parts[0])}年 ${Number(parts[1])}月 ${Number(parts[2])}日`;
         const detailArea = document.getElementById('event-detail-area');
+        
         detailArea.innerHTML = `
-          <div class="card bg-base-100 shadow-md p-4 border-l-8 border-success flex flex-row justify-between items-center rounded-none sm:rounded-box">
-            <div>
-              <div class="font-bold text-base text-slate-800">${formattedDate}</div>
-              <div class="text-sm text-slate-600 mt-1">🎾 ${title}</div>
+          <div class="card bg-base-100 shadow-md p-4 border border-success">
+            <div class="font-bold text-sm text-slate-800 mb-1">選択中: ${formattedDate}</div>
+            <div class="text-base text-slate-700 mb-3">🎾 ${title}</div>
+            <div class="flex gap-2">
+              <button onclick="submitAttendance('${dateStr}', '${title}', '出席')" class="btn btn-success btn-sm flex-1 text-white font-bold">出席する</button>
+              <button onclick="submitAttendance('${dateStr}', '${title}', '欠席')" class="btn btn-outline btn-error btn-sm flex-1 font-bold">欠席する</button>
             </div>
-            <button onclick="openAttendanceModal('${dateStr}', '${title}')" class="btn btn-success btn-sm text-white font-bold">出欠席</button>
           </div>
         `;
       }
 
-      // 「出欠席」ボタンを押したときの処理
-      function openAttendanceModal(dateStr, title) {
+      // 出欠席データをGASへ送信
+      function submitAttendance(dateStr, title, status) {
         if (!userProfile) {
           alert('LINEのユーザー情報を取得中です。少し待ってからもう一度お試しください。');
           return;
         }
 
-        const isAttending = confirm(`${userProfile.displayName} さん\n${formatDateWithoutDay(dateStr)} (${title})\n\n「OK」で出席、「キャンセル」で欠席として登録します`);
-        
+        if (!confirm(`${userProfile.displayName} さん\n${dateStr} (${title})\n\n「${status}」として登録しますか？`)) {
+          return;
+        }
+
         const attendanceData = {
           date: dateStr,
           userId: userProfile.userId,
           displayName: userProfile.displayName,
-          status: isAttending ? '出席' : '欠席'
+          status: status
         };
 
-        submitAttendance(attendanceData);
-      }
-
-      // GASのAPIへデータをPOSTする関数
-      function submitAttendance(data) {
         fetch(GAS_API_URL, {
           method: 'POST',
-          body: JSON.stringify(data)
+          body: JSON.stringify(attendanceData)
         })
         .then(response => response.json())
         .then(result => {
           if (result.success) {
-            alert('出欠席を登録しました！');
+            alert(`「${status}」で登録しました！`);
           } else {
             alert('登録に失敗しました: ' + (result.message || '不明なエラー'));
           }
