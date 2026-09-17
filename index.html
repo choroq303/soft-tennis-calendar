@@ -26,35 +26,28 @@
       #calendar { 
         flex: 1;
         min-height: 450px; 
-        visibility: visible; /* カレンダーは常に見えるようにする */
       }
       
-      /* ローディング画面（カレンダーの上に被せる） */
       #loading-overlay {
         position: absolute;
         inset: 0;
-        background-color: #f8fafc; /* bodyの背景色と同じにする */
+        background-color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 50; /* カレンダーより手前に表示 */
+        z-index: 50;
       }
 
       .fc { height: 100% !important; font-size: 0.85rem; }
       .fc-toolbar-title { font-size: 1.6rem !important; font-weight: bold; color: #1e293b; }
       
-      /* 曜日ヘッダーの色 */
       .fc-col-header-cell-cushion { color: #475569; text-decoration: none; font-weight: bold; padding: 6px 0 !important; }
       .fc-day-sun .fc-col-header-cell-cushion { color: #ef4444; }
       .fc-day-sat .fc-col-header-cell-cushion { color: #3b82f6; }
 
-      /* 日曜日の日付数字を赤色に */
       .fc-day-sun .fc-daygrid-day-number { color: #ef4444 !important; }
-      
-      /* 土曜日の日付数字を青色に */
       .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
 
-      /* 日付数字のレイアウトとサイズ調整 */
       .fc-daygrid-day-top {
         display: flex;
         justify-content: center;
@@ -67,7 +60,6 @@
         float: none !important;
       }
 
-      /* イベントバッジのデザイン */
       .fc-daygrid-event {
         background-color: #dcfce7 !important;
         border: 1px solid #4ade80 !important;
@@ -87,40 +79,35 @@
   </head>
   <body class="bg-base-200">
 
-    <!-- カレンダーカード -->
     <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative overflow-hidden">
       
-      <!-- ローディングオーバーレイ（文字なし、くるくるのみ） -->
+      <!-- ローディング（完全に文字なし、くるくるスピナーのみ） -->
       <div id="loading-overlay">
         <span class="loading loading-spinner loading-lg text-success"></span>
       </div>
 
-      <!-- カレンダー本体 -->
       <div id="calendar"></div>
     </div>
 
-    <!-- 選択時の詳細エリア -->
-    <div id="event-detail-area" class="flex-shrink-0 px-1 sm:rounded-box sm:px-0 mb-1">
+    <div id="event-detail-area" class="flex-shrink-0 px-1 sm:px-0 mb-1">
       <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-sm border border-base-300">
         日付や予定をタップすると出欠席の操作ができます
       </div>
     </div>
 
     <script>
-      // TODO: ご自身のGASのウェブアプリURLとLIFF IDに書き換えてください
       const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxricXsnjpfBfNgmbmLLESqnLVn-bvEm3xbuAVls2Y7SDh3S-h9Eaxuc8L8Ygqn8WmcBg/exec';
       const LIFF_ID = 'あなたのLIFF_ID';
 
-      let userProfile = null; // LINEのユーザー情報を保持する変数
+      let userProfile = null;
 
       document.addEventListener('DOMContentLoaded', function() {
-        // 1. LIFFの初期化とログイン・プロフィール取得
         liff.init({ liffId: LIFF_ID }).then(() => {
           if (!liff.isLoggedIn()) {
             liff.login();
           } else {
             liff.getProfile().then(profile => {
-              userProfile = profile; // ログイン中のユーザー情報をゲット！
+              userProfile = profile;
             }).catch(err => console.error('Profile fetch failed', err));
           }
         }).catch(err => {
@@ -130,7 +117,6 @@
         const calendarEl = document.getElementById('calendar');
         const loadingOverlay = document.getElementById('loading-overlay');
         
-        // 2. FullCalendarの設定
         const calendar = new FullCalendar.Calendar(calendarEl, {
           initialView: 'dayGridMonth',
           locale: 'ja',
@@ -140,20 +126,16 @@
             right: 'next'
           },
           height: '100%',
-          // イベント取得時の処理
           events: function(fetchInfo, successCallback, failureCallback) {
-            // 読み込み開始：オーバーレイを表示
             loadingOverlay.style.display = 'flex';
 
             fetch(GAS_API_URL)
               .then(response => response.json())
               .then(data => {
-                // 読み込み終了：オーバーレイを非表示
                 loadingOverlay.style.display = 'none';
                 successCallback(data);
               })
               .catch(error => {
-                // エラー時も非表示に
                 loadingOverlay.style.display = 'none';
                 console.error('Error fetching events:', error);
                 failureCallback(error);
@@ -167,7 +149,7 @@
             if (clickedEvent) {
               showDetail(info.dateStr, clickedEvent.title);
             } else {
-              showDetail(info.dateStr, '練習'); // 予定がない日をタップした場合のデフォルトタイトル
+              showDetail(info.dateStr, '練習');
             }
           },
           datesSet: function() {
@@ -197,7 +179,6 @@
         return dateStr;
       }
 
-      // カレンダーの下などに詳細カードを表示し、出欠席ボタンを置く
       function showDetail(dateStr, title) {
         const formattedDate = formatDateWithoutDay(dateStr);
         const detailArea = document.getElementById('event-detail-area');
@@ -212,14 +193,12 @@
         `;
       }
 
-      // 出欠席の選択ダイアログを出し、GASへPOSTする関数
       function openAttendanceModal(dateStr, title) {
         if (!userProfile) {
           alert('LINEのユーザー情報を取得中です。少し待ってからもう一度お試しください。');
           return;
         }
 
-        // 簡単な確認ダイアログ（OK=出席、キャンセル=欠席）
         const isAttending = confirm(`${userProfile.displayName} さん\n${formatDateWithoutDay(dateStr)} (${title})\n\n「OK」で出席、「キャンセル」で欠席として登録します`);
         
         const attendanceData = {
