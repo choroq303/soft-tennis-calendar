@@ -1,4 +1,102 @@
-<script>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テニスサークルカレンダー</title>
+    <!-- Tailwind CSS & daisyUI CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/full.min.css" rel="stylesheet" type="text/css" />
+    <!-- FullCalendar CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <!-- LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+      html, body { 
+        height: 100%;
+        margin: 0;
+        background-color: #f8fafc;
+        box-sizing: border-box;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        padding: 6px;
+      }
+      #calendar { 
+        flex: 1;
+        min-height: 450px; 
+      }
+      
+      .fc { height: 100% !important; font-size: 0.85rem; }
+      .fc-toolbar-title { font-size: 1.6rem !important; font-weight: bold; color: #1e293b; }
+      
+      /* 曜日ヘッダーの色 */
+      .fc-col-header-cell-cushion { color: #475569; text-decoration: none; font-weight: bold; padding: 6px 0 !important; }
+      .fc-day-sun .fc-col-header-cell-cushion { color: #ef4444; }
+      .fc-day-sat .fc-col-header-cell-cushion { color: #3b82f6; }
+
+      /* 日曜日の日付数字を赤色に */
+      .fc-day-sun .fc-daygrid-day-number { 
+        color: #ef4444 !important; 
+      }
+      
+      /* 土曜日の日付数字を青色に */
+      .fc-day-sat .fc-daygrid-day-number { 
+        color: #3b82f6 !important; 
+      }
+
+      /* 日付数字のレイアウトとサイズ調整 */
+      .fc-daygrid-day-top {
+        display: flex;
+        justify-content: center;
+        padding-top: 4px;
+      }
+      .fc-daygrid-day-number { 
+        color: #0f172a; 
+        font-weight: 900 !important; 
+        font-size: 1.2rem !important; 
+        float: none !important;
+      }
+
+      /* イベントバッジのデザイン */
+      .fc-daygrid-event {
+        background-color: #dcfce7 !important;
+        border: 1px solid #4ade80 !important;
+        color: #166534 !important;
+        padding: 4px 6px !important;
+        border-radius: 6px !important;
+        font-size: 0.8rem !important;
+        font-weight: bold;
+        margin-top: 2px !important;
+      }
+      .fc-event-title {
+        white-space: normal !important;
+        overflow: hidden;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body class="bg-base-200">
+
+    <!-- カレンダーカード（ローディングスピナー内蔵） -->
+    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box relative flex items-center justify-center">
+      <!-- くるくるスピナー（初期状態） -->
+      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-base-100 z-10">
+        <span class="loading loading-spinner loading-lg text-success"></span>
+        <span class="text-sm text-slate-400">カレンダーを読み込んでいます...</span>
+      </div>
+      <div id="calendar" class="w-full h-full"></div>
+    </div>
+
+    <!-- 選択時の詳細エリア -->
+    <div id="event-detail-area" class="flex-shrink-0 px-1 sm:px-0 mb-1">
+      <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-sm border border-base-300">
+        日付や予定をタップすると出欠席の操作ができます
+      </div>
+    </div>
+
+    <script>
       const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxricXsnjpfBfNgmbmLLESqnLVn-bvEm3xbuAVls2Y7SDh3S-h9Eaxuc8L8Ygqn8WmcBg/exec';
       const LIFF_ID = 'あなたのLIFF_ID'; // ご自身のLIFF IDに書き換えてください
 
@@ -30,13 +128,18 @@
           },
           height: '100%',
           events: function(fetchInfo, successCallback, failureCallback) {
+            const spinner = document.getElementById('loading-spinner');
+            if (spinner) spinner.style.display = 'flex'; // 読み込み開始時にスピナーを表示
+
             // GASのAPIからイベントデータを取得
             fetch(GAS_API_URL)
               .then(response => response.json())
               .then(data => {
+                if (spinner) spinner.style.display = 'none'; // 取得成功で非表示
                 successCallback(data);
               })
               .catch(error => {
+                if (spinner) spinner.style.display = 'none'; // エラー時も非表示
                 console.error('Error fetching events:', error);
                 failureCallback(error);
               });
@@ -49,8 +152,7 @@
             if (clickedEvent) {
               showDetail(info.dateStr, clickedEvent.title);
             } else {
-              // 予定がない日をタップした場合のデフォルト（必要に応じて変更可能）
-              // showDetail(info.dateStr, '練習');
+              // 予定がない日をタップした場合など
             }
           },
           datesSet: function() {
@@ -96,7 +198,7 @@
         `;
       }
 
-      // 2. 「出欠席」ボタンを押したときの処理（確認ダイアログ ＋ GASへPOST送信）
+      // 「出欠席」ボタンを押したときの処理（確認ダイアログ ＋ GASへPOST送信）
       function openAttendanceModal(dateStr, title) {
         if (!userProfile) {
           alert('LINEのユーザー情報を取得中です。少し待ってからもう一度お試しください。');
@@ -116,7 +218,7 @@
         submitAttendance(attendanceData);
       }
 
-      // 3. GASのAPIへデータをPOSTする関数
+      // GASのAPIへデータをPOSTする関数
       function submitAttendance(data) {
         fetch(GAS_API_URL, {
           method: 'POST',
@@ -136,3 +238,5 @@
         });
       }
     </script>
+  </body>
+</html>
