@@ -19,13 +19,16 @@
       <button onclick="changeMonth(1)" class="btn btn-sm btn-outline">次月 ▶</button>
     </div>
 
-    <!-- 予定リストエリア -->
-    <div id="event-list" class="flex-1 space-y-2 mb-3">
-      <!-- 読み込み中表示 -->
-      <div class="text-center py-10">
+    <!-- 予定リストエリア（relativeにしてスピナーを中央に重ねられるようにする） -->
+    <div class="relative flex-1 mb-3">
+      <!-- くるくるスピナー（最初から表示状態にしておく） -->
+      <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center bg-base-200/80 z-20 rounded-box">
         <span class="loading loading-spinner loading-lg text-success"></span>
-        <p class="text-xs text-gray-400 mt-2">予定を読み込んでいます...</p>
+        <p class="text-xs text-gray-500 mt-2 font-bold">読み込んでいます...</p>
       </div>
+
+      <!-- リスト本体 -->
+      <div id="event-list" class="space-y-2"></div>
     </div>
 
     <!-- 詳細・操作エリア -->
@@ -40,8 +43,8 @@
       const LIFF_ID = '2011647105-JVOWW7Tw';
 
       let userProfile = null;
-      let allEvents = []; // 取得した全イベントを保持
-      let currentDate = new Date(2026, 8, 1); // 初期表示：2026年9月 (月は0始まりなので8=9月)
+      let allEvents = []; 
+      let currentDate = new Date(2026, 8, 1); // 初期表示：2026年9月
 
       document.addEventListener('DOMContentLoaded', function() {
         // 1. LIFFの初期化
@@ -63,17 +66,23 @@
 
       // GASからイベントを取得する関数
       function fetchEvents() {
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) spinner.style.display = 'flex'; // 確実にくるくるを表示
+
         fetch(GAS_API_URL, { cache: 'no-store' })
           .then(response => response.json())
           .then(data => {
-            // FullCalendar形式（{ title, start, ... }）を想定して整形
             allEvents = data.map(item => ({
-              date: item.start || item.date, // 'YYYY-MM-DD'
+              date: item.start || item.date,
               title: item.title || '練習'
             }));
+            
+            // 取得完了したらスピナーを消す
+            if (spinner) spinner.style.display = 'none';
             renderCalendar();
           })
           .catch(error => {
+            if (spinner) spinner.style.display = 'none';
             console.error('Error fetching events:', error);
             document.getElementById('event-list').innerHTML = `
               <div class="card bg-base-100 p-4 text-center text-error text-sm">
@@ -92,12 +101,10 @@
       // 画面描画関数
       function renderCalendar() {
         const year = currentDate.getFullYear();
-        const month = currentDate.getMonth(); // 0-11
+        const month = currentDate.getMonth(); 
         
-        // タイトル更新
         document.getElementById('month-title').textContent = `${year}年 ${month + 1}月`;
 
-        // 今月の初日から末日までの日付リストを生成
         const listContainer = document.getElementById('event-list');
         listContainer.innerHTML = '';
 
@@ -114,12 +121,8 @@
           const dateString = `${yearStr}-${monthStr}-${dayStr}`;
           const dayOfWeek = dayNames[dateObj.getDay()];
 
-          // この日の予定があるか探す
           const event = allEvents.find(ev => ev.date === dateString);
 
-          // 週末（土日）または予定がある日だけを表示する（すべての日を出したい場合は条件を外してください）
-          // ここでは「予定がある日」をメインに、あるいは1ヶ月全日出すか。今回はシンプルに全日、または予定がある日をハイライト
-          // サークル用なので「予定がある日」をピックアップしてカードにする形式がスッキリします！
           if (event) {
             hasEventInMonth = true;
             const isSun = (dateObj.getDay() === 0);
