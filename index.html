@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テニスサークルカレンダー</title>
+    <!-- Tailwind CSS & daisyUI CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/full.min.css" rel="stylesheet" type="text/css" />
+    <!-- FullCalendar CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <!-- LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+      html, body { 
+        height: 100%;
+        margin: 0;
+        background-color: #f8fafc;
+        box-sizing: border-box;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        padding: 6px;
+      }
+      #calendar { 
+        flex: 1;
+        min-height: 450px; 
+      }
+      
+      .fc { height: 100% !important; font-size: 0.85rem; }
+      .fc-toolbar-title { font-size: 1.6rem !important; font-weight: bold; color: #1e293b; }
+      
+      /* 曜日ヘッダーの色 */
+      .fc-col-header-cell-cushion { color: #475569; text-decoration: none; font-weight: bold; padding: 6px 0 !important; }
+      .fc-day-sun .fc-col-header-cell-cushion { color: #ef4444; }
+      .fc-day-sat .fc-col-header-cell-cushion { color: #3b82f6; }
+
+      /* 日曜日の日付数字を赤色に */
+      .fc-day-sun .fc-daygrid-day-number { 
+        color: #ef4444 !important; 
+      }
+      
+      /* 土曜日の日付数字を青色に */
+      .fc-day-sat .fc-daygrid-day-number { 
+        color: #3b82f6 !important; 
+      }
+
+      /* 日付数字のレイアウトとサイズ調整 */
+      .fc-daygrid-day-top {
+        display: flex;
+        justify-content: center;
+        padding-top: 4px;
+      }
+      .fc-daygrid-day-number { 
+        color: #0f172a; 
+        font-weight: 900 !important; 
+        font-size: 1.2rem !important; 
+        float: none !important;
+      }
+
+      /* イベントバッジのデザイン */
+      .fc-daygrid-event {
+        background-color: #dcfce7 !important;
+        border: 1px solid #4ade80 !important;
+        color: #166534 !important;
+        padding: 4px 6px !important;
+        border-radius: 6px !important;
+        font-size: 0.8rem !important;
+        font-weight: bold;
+        margin-top: 2px !important;
+      }
+      .fc-event-title {
+        white-space: normal !important;
+        overflow: hidden;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body class="bg-base-200">
+
+    <!-- カレンダーカード -->
+    <div class="card bg-base-100 shadow-sm p-1 sm:p-3 mb-2 flex-1 rounded-none sm:rounded-box">
+      <div id="calendar"></div>
+    </div>
+
+    <!-- 選択時の詳細エリア -->
+    <div id="event-detail-area" class="flex-shrink-0 px-1 sm:px-0 mb-1">
+      <div class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-sm border border-base-300">
+        日付や予定をタップすると出欠席の操作ができます
+      </div>
+    </div>
+
+    <script>
+      // TODO: ご自身のGASのウェブアプリURLとLIFF IDに書き換えてください
+      const GAS_API_URL = 'https://script.google.com/macros/s/あなたのGASのデプロイID/exec';
+      const LIFF_ID = 'あなたのLIFF_ID';
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // LIFFの初期化
+        liff.init({ liffId: LIFF_ID }).then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          }
+        }).catch(err => {
+          console.log('LIFF Initialization failed.', err);
+        });
+
+        const calendarEl = document.getElementById('calendar');
+        
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          locale: 'ja',
+          headerToolbar: {
+            left: 'prev',
+            center: 'title',
+            right: 'next'
+          },
+          height: '100%',
+          events: function(fetchInfo, successCallback, failureCallback) {
+            // GASのAPIからイベントデータを取得
+            fetch(GAS_API_URL)
+              .then(response => response.json())
+              .then(data => {
+                successCallback(data);
+              })
+              .catch(error => {
+                console.error('Error fetching events:', error);
+                failureCallback(error);
+              });
+          },
+          eventClick: function(info) {
+            showDetail(info.event.startStr, info.event.title);
+          },
+          dateClick: function(info) {
+            const clickedEvent = calendar.getEvents().find(ev => ev.startStr === info.dateStr);
+            if (clickedEvent) {
+              showDetail(info.dateStr, clickedEvent.title);
+            }
+          },
+          datesSet: function() {
+            removeDayText();
+          }
+        });
+        
+        calendar.render();
+      });
+
+      // マス目内の日付から「日」を消去する関数
+      function removeDayText() {
+        setTimeout(() => {
+          const dayNumbers = document.querySelectorAll('.fc-daygrid-day-number');
+          dayNumbers.forEach(elem => {
+            if (elem.textContent.includes('日')) {
+              elem.textContent = elem.textContent.replace('日', '');
+            }
+          });
+        }, 10);
+      }
+
+      // 詳細カード用の日付フォーマット（「日」なし）
+      function formatDateWithoutDay(dateStr) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          return Number(parts[0]) + '年 ' + Number(parts[1]) + '月 ' + Number(parts[2]);
+        }
+        return dateStr;
+      }
+
+      function showDetail(dateStr, title) {
+        const formattedDate = formatDateWithoutDay(dateStr);
+        const detailArea = document.getElementById('event-detail-area');
+        detailArea.innerHTML = `
+          <div class="card bg-base-100 shadow-md p-4 border-l-8 border-success flex flex-row justify-between items-center rounded-none sm:rounded-box">
+            <div>
+              <div class="font-bold text-base text-slate-800">${formattedDate}</div>
+              <div class="text-sm text-slate-600 mt-1">🎾 ${title}</div>
+            </div>
+            <button class="btn btn-success btn-sm text-white font-bold">出欠席</button>
+          </div>
+        `;
+      }
+    </script>
+  </body>
+</html>
