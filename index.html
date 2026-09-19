@@ -1,93 +1,208 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FullCalendar 単体テスト</title>
-    <!-- Tailwind CSS & DaisyUI CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/full.min.css" rel="stylesheet" type="text/css" />
-    
-    <!-- FullCalendar CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
-    <!-- FullCalendar JS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-    <style>
-      /* FullCalendarのデザインをDaisyUI/Tailwindの雰囲気に馴染ませる調整 */
-      #calendar {
-        background: white;
-        padding: 12px;
-        border-radius: 1rem;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      }
-      .fc .fc-toolbar-title {
-        font-size: 1.1rem !important;
-        font-weight: bold;
-      }
-      .fc .fc-button {
-        background-color: #22c55e !important; /* Tailwind successカラー */
-        border-color: #22c55e !important;
-        font-size: 0.85rem !important;
-        padding: 4px 8px !important;
-      }
-      .fc .fc-button:hover {
-        background-color: #16a34a !important;
-        border-color: #16a34a !important;
-      }
-    </style>
-  </head>
-  <body class="bg-base-200 min-h-screen flex flex-col p-3 max-w-md mx-auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullCalendar 単体テスト</title>
+  <!-- Tailwind CSS & DaisyUI CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/full.min.css" rel="stylesheet" type="text/css" />
 
-    <!-- ヘッダータイトル -->
-    <div class="card bg-base-100 shadow-sm p-3 mb-3 text-center">
-      <h1 class="text-base font-bold text-slate-800">🎾 テニスサークル カレンダー確認</h1>
-    </div>
+  <!-- FullCalendar CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+  <!-- FullCalendar JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-    <!-- カレンダー本体を表示するエリア -->
-    <div class="flex-1 mb-3">
-      <div id="calendar"></div>
-    </div>
+  <style>
+    /* ==========================================
+       1. カレンダー全体・コンテナ設定
+       ========================================== */
+    #calendar {
+      background: gray;
+      padding: 8px;
+      width: 100%;
+    }
 
-    <!-- 操作確認エリア -->
-    <div id="info-area" class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-xs border border-base-300">
-      日付をクリックするとイベント名が表示されます
-    </div>
+    .fc {
+      width: 100%;
+    }
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          locale: 'ja',                  // 日本語化
-          initialView: 'dayGridMonth',   // 月表示
-          headerToolbar: {
-            left: 'prev',
-            center: 'title',
-            right: 'next'
-          },
-          height: 'auto',                // 高さを自動調整してスマホで見やすくする
-          events: [
-            // サンプル用のフェイクデータ
-            { title: '土曜練習会', start: '2026-09-05' },
-            { title: '土曜練習会', start: '2026-09-12' },
-            { title: '大会前練習', start: '2026-09-20' },
-            { title: '月末練習', start: '2026-09-26' }
-          ],
-          dateClick: function(info) {
-            // 日付をタップしたときの挙動
-            document.getElementById('info-area').innerHTML = `
+    /* ==========================================
+       2. ツールバー（ヘッダータイトル・ボタン）
+       ========================================== */
+    .fc .fc-toolbar-title {
+      font-size: 1.1rem !important;
+      font-weight: bold;
+    }
+
+    .fc .fc-button {
+      background-color: grey !important;
+      border-color: grey !important;
+      font-size: 0.85rem !important;
+      padding: 4px 8px !important;
+    }
+
+    .fc .fc-button:hover {
+      background-color: #16a34a !important;
+      border-color: #16a34a !important;
+    }
+
+    /* ==========================================
+       3. グリッド線全体の共通リセット
+       ========================================== */
+    .fc-theme-standard td,
+    .fc-theme-standard th,
+    .fc-theme-standard .fc-scrollgrid {
+      border: none !important;
+    }
+
+    /* ==========================================
+       4. 曜日ヘッダーエリア
+       ========================================== */
+    .fc-col-header-cell {
+      border: none !important;
+      background-color: grey !important;
+      padding-top: 6px;
+      padding-bottom: 6px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .fc-col-header-cell-cushion {
+      padding: 0 !important;
+    }
+
+    /* ==========================================
+       5. 日付グリッド・セルエリア
+       ========================================== */
+    .fc-daygrid-body {
+      border-spacing: 4px !important;
+      border-collapse: separate !important;
+    }
+
+    .fc-daygrid-day {
+      background-color: #ffffff;
+      border-radius: 2px;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 2px gray;
+    }
+
+    .fc-daygrid-day-frame {
+      min-height: 55px !important;
+      padding: 2px;
+    }
+
+    /* ==========================================
+       6. 日付の数字・テキスト調整
+       ========================================== */
+    .fc .fc-daygrid-day-top {
+      display: flex;
+      justify-content: center;
+      padding-top: 1px;
+    }
+
+    .fc .fc-daygrid-day-number {
+      float: none;
+      font-size: 0.9rem;
+      /* padding: 0px 0px */
+    }
+
+    /* ==========================================
+       7. 曜日・日付の色分け（日曜・祝日: 赤 / 土曜: 青）
+       ========================================== */
+
+    /* --- 曜日ヘッダー（一番上の「日」「土」など）の色 --- */
+    /* 日曜日のヘッダー */
+    .fc-col-header-cell.fc-day-sun {
+      color: #ef4444 !important;
+      /* 赤 */
+    }
+
+    /* 土曜日のヘッダー */
+    .fc-col-header-cell.fc-day-sat {
+      color: #3b82f6 !important;
+      /* 青 */
+    }
+
+    /* --- 日付セルの数字の色 --- */
+    /* 日曜日の数字 */
+    .fc-day-sun .fc-daygrid-day-number {
+      color: #ef4444 !important;
+      /* 赤 */
+    }
+
+    /* 土曜日の数字 */
+    .fc-day-sat .fc-daygrid-day-number {
+      color: #3b82f6 !important;
+      /* 青 */
+    }
+
+    /* --- 祝日の数字・背景の色（FullCalendar標準の祝日クラス対応） --- */
+    .fc-day-sun.fc-day-other .fc-daygrid-day-number,
+    .fc-day-holiday .fc-daygrid-day-number {
+      color: #ef4444 !important;
+      /* 祝日も赤にする */
+    }
+  </style>
+</head>
+
+<body class="bg-base-200 min-h-screen flex flex-col">
+
+  <!-- ヘッダータイトル -->
+  <div class="card bg-base-100 shadow-sm p-3 mb-3 text-center">
+    <h1 class="text-base font-bold text-slate-800">🎾 テニスサークル カレンダー確認</h1>
+  </div>
+
+  <!-- カレンダー本体を表示するエリア -->
+  <div class="flex-1 mb-3">
+    <div id="calendar"></div>
+  </div>
+
+  <!-- 操作確認エリア -->
+  <div id="info-area" class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-xs border border-base-300">
+    日付をクリックするとイベント名が表示されます
+  </div>
+
+  <script>
+      var calendarEl = document.getElementById('calendar');
+
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'ja',                  // 日本語化
+        initialView: 'dayGridMonth',   // 月表示
+        headerToolbar: {
+          left: 'prev',
+          center: 'title',
+          right: 'next'
+        },
+        height: 'auto',                // 高さを自動調整してスマホで見やすくする
+
+        dayCellContent: function (arg) {
+          // 日付の「日」を消す
+          return arg.dayNumberText.replace('日', '')
+        },
+
+        events: [
+          // サンプル用のフェイクデータ
+          { title: '土曜練習会', start: '2026-09-05' },
+          { title: '土曜練習会', start: '2026-09-12' },
+          { title: '大会前練習', start: '2026-09-20' },
+          { title: '月末練習', start: '2026-09-26' }
+        ],
+        dateClick: function (info) {
+          // 日付をタップしたときの挙動
+          document.getElementById('info-area').innerHTML = `
               <span class="font-bold text-success">${info.dateStr}</span> が選択されました
             `;
-          },
-          eventClick: function(info) {
-            // イベントをタップしたときの挙動
-            alert(`イベント: ${info.event.title}\n日付: ${info.event.startStr}`);
-          }
-        });
-
-        calendar.render();
+        },
+        eventClick: function (info) {
+          // イベントをタップしたときの挙動
+          alert(`イベント: ${info.event.title}\n日付: ${info.event.startStr}`);
+        }
       });
-    </script>
-  </body>
+
+      calendar.render();
+  </script>
+</body>
+
 </html>
