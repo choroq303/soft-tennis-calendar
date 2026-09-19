@@ -15,6 +15,13 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
     /* ==========================================
        1. カレンダー全体・コンテナ設定
        ========================================== */
@@ -41,11 +48,6 @@
       border-color: grey !important;
       font-size: 0.85rem !important;
       padding: 4px 8px !important;
-    }
-
-    .fc .fc-button:hover {
-      background-color: #16a34a !important;
-      border-color: #16a34a !important;
     }
 
     /* ==========================================
@@ -149,59 +151,49 @@
 
 <body class="bg-base-200 min-h-screen flex flex-col">
 
-  <!-- ヘッダータイトル -->
-  <div class="card bg-base-100 shadow-sm p-3 mb-3 text-center">
-    <h1 class="text-base font-bold text-slate-800">🎾 テニスサークル カレンダー確認</h1>
-  </div>
-
   <!-- カレンダー本体を表示するエリア -->
   <div class="flex-1 mb-3">
     <div id="calendar"></div>
   </div>
 
-  <!-- 操作確認エリア -->
-  <div id="info-area" class="card bg-base-100 shadow-sm p-4 text-center text-gray-500 text-xs border border-base-300">
-    日付をクリックするとイベント名が表示されます
-  </div>
-
   <script>
-      var calendarEl = document.getElementById('calendar');
+    var calendarEl = document.getElementById('calendar');
 
-      var calendar = new FullCalendar.Calendar(calendarEl, {
-        locale: 'ja',                  // 日本語化
-        initialView: 'dayGridMonth',   // 月表示
-        headerToolbar: {
-          left: 'prev',
-          center: 'title',
-          right: 'next'
-        },
-        height: 'auto',                // 高さを自動調整してスマホで見やすくする
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      locale: 'ja',                  // 日本語化
+      initialView: 'dayGridMonth',   // 月表示
+      headerToolbar: {
+        left: 'prev',
+        center: 'title',
+        right: 'next'
+      },
+      height: '100%',                // 高さを自動調整してスマホで見やすくする
 
-        dayCellContent: function (arg) {
-          // 日付の「日」を消す
-          return arg.dayNumberText.replace('日', '')
-        },
+      dayCellContent: function (arg) {
+        // 日付の「日」を消す
+        return arg.dayNumberText.replace('日', '')
+      },
 
-        events: [
-          // サンプル用のフェイクデータ
-          { title: '土曜練習会', start: '2026-09-05' },
-          { title: '土曜練習会', start: '2026-09-12' },
-          { title: '大会前練習', start: '2026-09-20' },
-          { title: '月末練習', start: '2026-09-26' }
-        ],
-        dateClick: function (info) {
-          // 日付をタップしたときの挙動
-          document.getElementById('info-area').innerHTML = `
+      events: [
+        // サンプル用のフェイクデータ
+        { title: '土曜練習会', start: '2026-09-05' },
+        { title: '土曜練習会', start: '2026-09-12' },
+        { title: '大会前練習', start: '2026-09-20' },
+        { title: '月末練習', start: '2026-09-26' }
+      ],
+      dateClick: function (info) {
+        // 日付をタップしたときの挙動
+        document.getElementById('info-area').innerHTML = `
               <span class="font-bold text-success">${info.dateStr}</span> が選択されました
             `;
-        },
-        eventClick: function (info) {
-          // イベントをタップしたときの挙動
-          alert(`イベント: ${info.event.title}\n日付: ${info.event.startStr}`);
-        }
-      });
+      },
+      eventClick: function (info) {
+        // イベントをタップしたときの挙動
+        alert(`イベント: ${info.event.title}\n日付: ${info.event.startStr}`);
+      }
+    });
 
-      calendar.render();
+    calendar.render();
   </script>
 </body>
 
