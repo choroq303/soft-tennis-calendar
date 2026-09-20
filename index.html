@@ -14,220 +14,86 @@
   <!-- FullCalendar JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-  <style>
-    /* ==========================================
-       1. 基本レイアウト（HTML, Body）
-       ========================================== */
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* ==========================================
-       2. カレンダー全体・コンテナ設定
-       ========================================== */
-    #calendar {
-      background: gray;
-      padding: 8px;
-      width: 100%;
-      height: 100%;
-    }
-
-    .fc {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* ==========================================
-       3. ツールバー（ヘッダータイトル・ボタン）
-       ========================================== */
-    .fc .fc-toolbar-title {
-      font-size: 1.1rem !important;
-      font-weight: bold;
-    }
-
-    .fc .fc-button {
-      background-color: grey !important;
-      border-color: grey !important;
-      font-size: 0.85rem !important;
-      padding: 4px 8px !important;
-    }
-
-    .fc .fc-button-active {
-      background-color: #e5e7eb !important;
-      border-color: #9ca3af !important;
-    }
-
-    /* --- カスタム切替ボタン（アイコン用） --- */
-    .fc .fc-gridToggle-button,
-    .fc .fc-listToggle-button {
-      background-color: transparent !important;
-      color: transparent !important;
-      padding: 6px 12px !important;
-      width: 36px;
-      height: 36px;
-      background-repeat: no-repeat !important;
-      background-position: center !important;
-    }
-
-    .fc .fc-gridToggle-button {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") !important;
-    }
-
-    .fc .fc-listToggle-button {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='8' y1='6' x2='21' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='12' x2='21' y2='12'%3E%3C/line%3E%3Cline x1='8' y1='18' x2='21' y2='18'%3E%3C/line%3E%3Cline x1='3' y1='6' x2='3.01' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='12' x2='3.01' y2='12'%3E%3C/line%3E%3Cline x1='3' y1='18' x2='3.01' y2='18'%3E%3C/line%3E%3C/svg%3E") !important;
-    }
-
-    /* ==========================================
-       4. グリッド線全体の共通リセット
-       ========================================== */
-    .fc-theme-standard td,
-    .fc-theme-standard th,
-    .fc-theme-standard .fc-scrollgrid {
-      border: none !important;
-    }
-
-    /* ==========================================
-       5. 曜日ヘッダーエリア
-       ========================================== */
-    .fc-col-header-cell {
-      border: none !important;
-      background-color: grey !important;
-      padding-top: 6px;
-      padding-bottom: 6px;
-      font-size: 0.8rem;
-      font-weight: bold;
-    }
-
-    .fc-col-header-cell-cushion {
-      padding: 0 !important;
-    }
-
-    /* ==========================================
-       6. 日付グリッド・セルエリア
-       ========================================== */
-    .fc-daygrid-body {
-      border-spacing: 4px !important;
-      border-collapse: separate !important;
-    }
-
-    .fc-daygrid-day {
-      background-color: #ffffff;
-      border-radius: 2px;
-      overflow: hidden;
-      box-shadow: inset 0 0 0 2px gray;
-    }
-
-    .fc-daygrid-day-frame {
-      min-height: 55px !important;
-      padding: 2px;
-    }
-
-    /* ==========================================
-       7. 日付の数字・テキスト＆今日ハイライト調整
-       ========================================== */
-    .fc .fc-daygrid-day-top {
-      display: flex;
-      justify-content: center;
-      padding-top: 4px;
-    }
-
-    .fc .fc-daygrid-day-number {
-      float: none;
-      font-size: 0.9rem;
-    }
-
-    .fc .fc-daygrid-day.fc-day-today {
-      background-color: #ffffff !important;
-    }
-
-    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
-      background-color: #6b7280 !important;
-      color: #ffffff !important;
-      border-radius: 50% !important;
-      width: 26px;
-      height: 26px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* ==========================================
-       8. 曜日・日付の色分け（日曜・祝日: 赤 / 土曜: 青）
-       ========================================== */
-    .fc-col-header-cell.fc-day-sun,
-    .fc-day-sun .fc-daygrid-day-number,
-    .fc-day-sun.fc-day-other .fc-daygrid-day-number,
-    .fc-day-holiday .fc-daygrid-day-number {
-      color: #ef4444 !important;
-    }
-
-    .fc-col-header-cell.fc-day-sat,
-    .fc-day-sat .fc-daygrid-day-number {
-      color: #3b82f6 !important;
-    }
-  </style>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="./js/main.js" defer></script>
 </head>
 
 <body class="bg-base-200 min-h-screen flex flex-col">
 
-  <!-- カレンダー本体を表示するエリア -->
-  <div class="flex-1 mb-3">
-    <div id="calendar"></div>
-  </div>
+  <header class="app-topbar">
+    <!-- 左側はバランスを取るための空要素または戻るボタン等に活用可能 -->
+    <div class="topbar-left"></div>
 
-  <script>
-    var calendarEl = document.getElementById('calendar');
+    <!-- 中央タイトル -->
+    <h1 class="app-title">ソフトテニスカレンダー</h1>
 
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-      locale: 'ja',                  // 日本語化
-      initialView: 'dayGridMonth',   // 月表示
-      headerToolbar: {
-        left: 'prev',
-        center: 'title',
-        right: 'next gridToggle listToggle'
-      },
-      // ▼ アイコン（絵文字や記号）を設定したカスタムボタンを定義
-      customButtons: {
-        gridToggle: {
-          text: 'grid',
-          click: function () { calendar.changeView('dayGridMonth'); }
-        },
-        listToggle: {
-          text: 'list',
-          click: function () { calendar.changeView('listMonth'); }
-        }
-      },
-      height: '100%',                // 高さを自動調整してスマホで見やすくする
+    <!-- 右側ハンバーガーボタン -->
+    <div class="topbar-right">
+      <button id="menu-btn" class="hamburger-btn" aria-label="メニュー"></button>
+    </div>
+  </header>
 
-      dayCellContent: function (arg) {
-        // 日付の「日」を消す
-        return arg.dayNumberText.replace('日', '')
-      },
+  <!-- ドロップダウンメニュー -->
+  <nav id="dropdown-menu" class="dropdown-menu">
+    <button class="menu-item active" data-target="calendar-view">カレンダー</button>
+    <button class="menu-item" data-target="admin-event">予約管理</button>
+    <button class="menu-item" data-target="admin-court">コート管理</button>
+  </nav>
 
-      events: [
-        // サンプル用のフェイクデータ
-        { title: '土曜練習会', start: '2026-09-05' },
-        { title: '土曜練習会', start: '2026-09-12' },
-        { title: '大会前練習', start: '2026-09-20' },
-        { title: '月末練習', start: '2026-09-26' }
-      ],
-      dateClick: function (info) {
-        // 日付をタップしたときの挙動
-        document.getElementById('info-area').innerHTML = `
-              <span class="font-bold text-success">${info.dateStr}</span> が選択されました
-            `;
-      },
-      eventClick: function (info) {
-        // イベントをタップしたときの挙動
-        alert(`イベント: ${info.event.title}\n日付: ${info.event.startStr}`);
-      }
-    });
+  <!-- メインコンテンツ領域 -->
+  <main class="content-body">
+    <!-- カレンダー画面（※ここをview-panelで囲む！） -->
+    <div id="calendar-view" class="view-panel active">
+      <div id="calendar"></div>
 
-    calendar.render();
-  </script>
+      <!-- 👇 ダイアログ -->
+      <div id="event-modal" class="modal-overlay">
+        <div class="modal-content">
+          <h3 id="modal-title" class="modal-title">練習詳細</h3>
+
+          <div class="modal-body">
+            <p><strong>場所:</strong> <span id="modal-location">-</span></p>
+            <p><strong>コート:</strong> <span id="modal-court">-</span></p>
+            <p><strong>時間:</strong> <span id="modal-time">-</span></p>
+
+            <div class="modal-status-section">
+              <p class="status-label">現在の人数</p>
+              <div id="modal-counts" class="modal-counts">〇6 △4 ×10</div>
+            </div>
+
+            <div class="modal-attendance-section">
+              <p class="status-label">あなたの出欠を選択</p>
+              <div class="attendance-buttons">
+                <button class="att-btn att-ok" data-status="ok">〇 参加</button>
+                <button class="att-btn att-pen" data-status="pen">△ 未定</button>
+                <button class="att-btn att-ng" data-status="ng">× 不参加</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button id="modal-close-btn" class="modal-close-btn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 予約管理画面 -->
+    <div id="admin-event" class="view-panel">
+      <div class="panel-card">
+        <h3>予約管理</h3>
+        <p>ここに予約一覧や登録フォームが入ります。</p>
+      </div>
+    </div>
+
+    <!-- コート管理画面 -->
+    <div id="admin-court" class="view-panel">
+      <div class="panel-card">
+        <h3>コート管理</h3>
+        <p>ここにコートのマスタメンテナンス機能が入ります。</p>
+      </div>
+    </div>
+  </main>
 </body>
 
 </html>
