@@ -1,13 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
 
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FullCalendar 単体テスト</title>
-  <!-- Tailwind CSS & DaisyUI CDN -->
+  <title>カレンダーアプリ</title>
+
+  <!-- Tailwind CSS Play CDN (v3.x系) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/full.min.css" rel="stylesheet" type="text/css" />
+
+  <!-- DaisyUI CDN (v3.x系 - Tailwind v3と完全に連動します) -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
 
   <!-- FullCalendar CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
@@ -15,7 +18,13 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <link rel="stylesheet" href="./css/style.css">
-  <script src="./js/main.js" defer></script>
+  <script src="./js/config.js"></script>
+  <script id="main-script" defer></script>
+  <script>
+    const scriptTag = document.getElementById('main-script');
+    const uniqueVersion = new Date().getTime();
+    scriptTag.src = `./js/main.js?v=${uniqueVersion}`;
+  </script>
 </head>
 
 <body class="bg-base-200 min-h-screen flex flex-col">
@@ -25,7 +34,7 @@
     <div class="topbar-left"></div>
 
     <!-- 中央タイトル -->
-    <h1 class="app-title">ソフトテニスカレンダー</h1>
+    <h1 id="header-title" class="app-title">ソフトテニスカレンダー</h1>
 
     <!-- 右側ハンバーガーボタン -->
     <div class="topbar-right">
@@ -35,55 +44,25 @@
 
   <!-- ドロップダウンメニュー -->
   <nav id="dropdown-menu" class="dropdown-menu">
-    <button class="menu-item active" data-target="calendar-view">カレンダー</button>
-    <button class="menu-item" data-target="admin-event">予約管理</button>
-    <button class="menu-item" data-target="admin-court">コート管理</button>
+    <button class="menu-item active" data-target="calendar-view">練習日程</button>
+
+    <!-- 👇 管理者用メニューに目印クラスをつけ、初期は非表示にする -->
+    <button class="menu-item admin-only" data-target="admin-event">予定管理</button>
+    <button class="menu-item admin-only" data-target="admin-court">コート設定</button>
   </nav>
 
   <!-- メインコンテンツ領域 -->
   <main class="content-body">
     <!-- カレンダー画面（※ここをview-panelで囲む！） -->
     <div id="calendar-view" class="view-panel active">
-      <div id="calendar"></div>
-
-      <!-- 👇 ダイアログ -->
-      <div id="event-modal" class="modal-overlay">
-        <div class="modal-content">
-          <h3 id="modal-title" class="modal-title">練習詳細</h3>
-
-          <div class="modal-body">
-            <p><strong>場所:</strong> <span id="modal-location">-</span></p>
-            <p><strong>コート:</strong> <span id="modal-court">-</span></p>
-            <p><strong>時間:</strong> <span id="modal-time">-</span></p>
-
-            <div class="modal-status-section">
-              <p class="status-label">現在の人数</p>
-              <div id="modal-counts" class="modal-counts">〇6 △4 ×10</div>
-            </div>
-
-            <div class="modal-attendance-section">
-              <p class="status-label">あなたの出欠を選択</p>
-              <div class="attendance-buttons">
-                <button class="att-btn att-ok" data-status="ok">〇 参加</button>
-                <button class="att-btn att-pen" data-status="pen">△ 未定</button>
-                <button class="att-btn att-ng" data-status="ng">× 不参加</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button id="modal-close-btn" class="modal-close-btn">閉じる</button>
-          </div>
-        </div>
-      </div>
+      <!-- カレンダーが収まる -->
+      <div class="calendar-slot w-full h-full"></div>
     </div>
 
     <!-- 予約管理画面 -->
     <div id="admin-event" class="view-panel">
-      <div class="panel-card">
-        <h3>予約管理</h3>
-        <p>ここに予約一覧や登録フォームが入ります。</p>
-      </div>
+      <!-- カレンダーが収まる -->
+      <div class="calendar-slot w-full h-full"></div>
     </div>
 
     <!-- コート管理画面 -->
@@ -94,6 +73,167 @@
       </div>
     </div>
   </main>
+
+  <!-- 利用者用モーダル -->
+  <div id="user-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="modal-title" class="modal-title">練習詳細</h3>
+
+      <div class="modal-body">
+        <p><strong>場所:</strong> <span id="modal-location">-</span></p>
+        <p><strong>コート:</strong> <span id="modal-court">-</span></p>
+        <p><strong>時間:</strong> <span id="modal-time">-</span></p>
+
+        <div class="modal-status-section">
+          <p class="status-label">現在の人数</p>
+          <div id="modal-counts" class="modal-counts">〇6 △4 ×10</div>
+        </div>
+
+        <div class="modal-attendance-section">
+          <p class="status-label">あなたの出欠を選択</p>
+          <div class="attendance-buttons">
+            <button class="att-btn att-ok" data-status="ok">〇 参加</button>
+            <button class="att-btn att-pen" data-status="pen">△ 未定</button>
+            <button class="att-btn att-ng" data-status="ng">× 不参加</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modal-close-btn" class="modal-close-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理者用モーダル（予定の登録・編集） -->
+  <div id="admin-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="admin-modal-title" class="modal-title">予定の登録・編集</h3>
+
+      <div class="modal-body space-y-4">
+        <!-- 日付（タップしたセルの日付を固定表示するエリア） -->
+        <div class="form-group">
+          <label class="block text-sm font-bold text-gray-600 mb-1">日付</label>
+          <div id="admin-display-date"
+            class="p-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 font-medium">
+            2026-09-20 <!-- ここにJSで日付を埋め込む -->
+          </div>
+        </div>
+
+        <!-- 場所（しっかり枠をつけた入力フィールド） -->
+        <div class="form-group">
+          <label class="block text-sm font-bold text-gray-600 mb-1">場所</label>
+          <input type="text" id="admin-input-location" placeholder="例: 円山庭球場"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+
+        <!-- コート -->
+        <div class="form-group">
+          <label class="block text-sm font-bold text-gray-600 mb-1">コート</label>
+          <input type="text" id="admin-input-court" placeholder="例: 4番コート"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+
+        <!-- 時間の入力欄（ここをタップすると、サブダイアログが開く） -->
+        <div class="form-group mb-4">
+          <label class="block text-sm font-bold text-gray-600 mb-1">時間</label>
+          <div id="time-picker-trigger"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer flex justify-between items-center shadow-sm">
+            <span id="admin-display-time-text">19:00 ～ 21:00</span>
+            <span class="text-gray-400">▼</span>
+          </div>
+          <input type="hidden" id="admin-input-time" value="19:00～21:00">
+        </div>
+      </div>
+
+      <div class="modal-footer flex justify-between mt-6">
+        <button id="admin-delete-btn" class="btn btn-error text-white">削除</button>
+        <div class="flex gap-2">
+          <button id="admin-modal-close" class="btn">キャンセル</button>
+          <button id="admin-save-btn" class="btn btn-primary">保存する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === 【新規】時間選択専用のサブダイアログ === -->
+  <!-- <body>の直下にポツンと配置する -->
+  <div id="time-picker-modal" class="hidden">
+    <div class="bg-white p-4 rounded-lg shadow-2xl max-w-sm w-full mx-4 relative border border-gray-200">
+      <h4 class="text-md font-bold text-center text-gray-700 mb-3">時間を選択</h4>
+
+      <!-- デュアル・ドラムピッカー部分 -->
+      <div class="flex gap-2 items-center justify-center mb-4">
+        <!-- 開始ドラム -->
+        <div class="drum-container relative flex-1 h-36 overflow-hidden bg-gray-50 border rounded-md">
+          <div
+            class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-blue-50 pointer-events-none border-y border-blue-200 z-0">
+          </div>
+          <div class="drum-list start-drum h-full overflow-y-scroll snap-y snap-mandatory relative z-10"
+            style="scrollbar-width: none;"></div>
+        </div>
+
+        <span class="font-bold text-gray-500 text-lg">～</span>
+
+        <!-- 終了ドラム -->
+        <div class="drum-container relative flex-1 h-36 overflow-hidden bg-gray-50 border rounded-md">
+          <div
+            class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-blue-50 pointer-events-none border-y border-blue-200 z-0">
+          </div>
+          <div class="drum-list end-drum h-full overflow-y-scroll snap-y snap-mandatory relative z-10"
+            style="scrollbar-width: none;"></div>
+        </div>
+      </div>
+
+      <!-- ダイアログ内の操作ボタン -->
+      <div class="flex gap-2">
+        <button type="button" id="time-modal-cancel"
+          class="flex-1 bg-gray-200 text-gray-700 py-2 rounded font-bold text-sm hover:bg-gray-300">キャンセル</button>
+        <button type="button" id="time-modal-confirm"
+          class="flex-1 bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-700">決定</button>
+      </div>
+    </div>
+  </div>
+
 </body>
+
+<!-- 共通ローディングオーバーレイ -->
+<div id="common-loading" class="loading-overlay" style="display: none;">
+  <div class="spinner"></div>
+</div>
+
+<style>
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
 
 </html>

@@ -445,3 +445,41 @@ body {
 .modal-close-btn:hover {
     background: #d1d5db;
 }
+
+/* ドラムの各行の高さ */
+.drum-list::-webkit-scrollbar {
+  display: none;
+}
+.drum-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font-size: 1rem;
+  color: #374151;
+  cursor: pointer;
+}
+/* 上下に余白を持たせて、一番上や一番下の時間も真ん中に持ってこられるようにする */
+.drum-list::before,
+.drum-list::after {
+  content: '';
+  display: block;
+  height: 44px; 
+}
+
+/* サブダイアログを親（z-index: 50など想定）より絶対に上に表示する */
+#time-picker-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999 !important; /* 強制最前面 */
+  background-color: rgba(0, 0, 0, 0.5); /* 背景を少し暗くするオーバーレイ効果 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* hiddenクラスがついたら完全に非表示にする */
+#time-picker-modal.hidden {
+  display: none !important;
+}
