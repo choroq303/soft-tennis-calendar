@@ -446,6 +446,14 @@ body {
     background: #d1d5db;
 }
 
+.drum-list {
+  /* これが抜けているとスナップが効きません！ */
+  scroll-snap-type: y mandatory; 
+  overflow-y: scroll;
+  /* 高さを「アイテム3つ分（40px × 3 = 120px）」などに固定しておくのがおすすめ */
+  height: 120px; 
+}
+
 /* ドラムの各行の高さ */
 .drum-list::-webkit-scrollbar {
   display: none;
