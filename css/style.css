@@ -274,45 +274,97 @@ body {
     color: #3b82f6 !important;
 }
 
-/* カード全体のコンテナ */
+/* ==========================================
+   イベントカード全体のコンテナ（7行収まるように調整）
+   ========================================== */
 .custom-event-card {
-    font-size: 0.65rem;
-    /* 文字を少し小さめにして収まりを良くする */
-    line-height: 1.2;
-    padding: 3px 4px;
+    font-size: 0.55rem;
+    /* 7行をセル内に綺麗に収めるため少しコンパクトに */
+    line-height: 1.15;
+    padding: 2px 3px;
     color: #374151;
     background: #ffffff;
     border-radius: 4px;
     box-shadow: inset 0 0 0 1px #d1d5db;
     margin-bottom: 2px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 /* 各行の共通スタイル（はみ出た部分は三点リーダーで省略） */
 .event-row {
+    display: block;
+    width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 個別の色や太さの調整 */
+/* 1行目：場所 */
 .event-location {
     color: #6b7280;
-    font-size: 0.6rem;
+    font-size: 0.52rem;
 }
 
+/* 2行目（コート番号）の下に少し余白を追加して、時間ブロックと離す */
 .event-court {
     font-weight: bold;
     color: #111827;
+    margin-bottom: 2px;
+    /* ← ここでグループを区切る */
 }
 
-.event-time {
+/* 3・4行目：時間（開始・終了） */
+.event-time-start {
     color: #4b5563;
-    font-size: 0.6rem;
+    font-size: 0.52rem;
 }
 
+/* 4行目（終了時間）の下に少し余白を追加して、出欠ブロックと離す */
+.event-time-end {
+    color: #4b5563;
+    font-size: 0.52rem;
+    margin-bottom: 2px;
+    /* ← ここでグループを区切る */
+}
+
+/* 5〜7行目：出欠人数（〇・△・×）の行全体 */
 .event-status {
     font-weight: bold;
-    color: #059669;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
+    /* 数字の幅を完全に等幅に揃えるCSSプロパティ */
+}
+
+/* アイコンを包む固定幅のコンテナ（幅を少し狭く調整） */
+.status-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 0.75rem;
+    /* アイコンの縮小に合わせて調整 */
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+/* SVGアイコン自体のサイズを小さくする */
+.status-icon {
+    width: 0.55rem;
+    /* ここを小さく（例: 0.55remや0.6remなど） */
+    height: 0.55rem;
+}
+
+/* 自分が回答した行のスタイル */
+.event-row.is-my-choice {
+    background-color: #f3f4f6; /* うっすらグレーの背景 */
+    font-weight: bold;
+    border-radius: 4px;
+}
+.event-row.is-my-choice span {
+    color: #111827; /* 文字をはっきり黒く */
 }
 
 /* モーダル背景（暗転オーバーレイ） */
@@ -447,47 +499,62 @@ body {
 }
 
 .drum-list {
-  /* これが抜けているとスナップが効きません！ */
-  scroll-snap-type: y mandatory; 
-  overflow-y: scroll;
-  /* 高さを「アイテム3つ分（40px × 3 = 120px）」などに固定しておくのがおすすめ */
-  height: 120px; 
+    /* これが抜けているとスナップが効きません！ */
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    /* 高さを「アイテム3つ分（40px × 3 = 120px）」などに固定しておくのがおすすめ */
+    height: 120px;
 }
 
 /* ドラムの各行の高さ */
 .drum-list::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
+
 .drum-item {
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  scroll-snap-align: center;
-  font-size: 1rem;
-  color: #374151;
-  cursor: pointer;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 1rem;
+    color: #374151;
+    cursor: pointer;
 }
+
 /* 上下に余白を持たせて、一番上や一番下の時間も真ん中に持ってこられるようにする */
 .drum-list::before,
 .drum-list::after {
-  content: '';
-  display: block;
-  height: 44px; 
+    content: '';
+    display: block;
+    height: 44px;
 }
 
 /* サブダイアログを親（z-index: 50など想定）より絶対に上に表示する */
 #time-picker-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 9999 !important; /* 強制最前面 */
-  background-color: rgba(0, 0, 0, 0.5); /* 背景を少し暗くするオーバーレイ効果 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    position: fixed;
+    inset: 0;
+    z-index: 9999 !important;
+    /* 強制最前面 */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* 背景を少し暗くするオーバーレイ効果 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* hiddenクラスがついたら完全に非表示にする */
 #time-picker-modal.hidden {
-  display: none !important;
+    display: none !important;
+}
+
+/* ボタン内のアイコンの共通設定 */
+.icon-svg {
+    width: 1.2em;
+    /* 文字サイズに合わせて調整 */
+    height: 1.2em;
+    margin-right: 0.5em;
+    /* テキストとの間隔 */
+    vertical-align: middle;
+    /* テキストと縦方向の中央揃え */
 }
