@@ -6,7 +6,7 @@ const SUPABASE_ANON_KEY = CONFIG.SUPABASE_ANON_KEY;
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 予定データの取得
-export async function fetchEvents(currentUserId = 'dummy_user_id') {
+export async function fetchEvents(currentUserId) {
     showLoading();
     try {
         // 1. reservations と attendance をSupabaseから並行取得

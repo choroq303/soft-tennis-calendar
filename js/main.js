@@ -108,17 +108,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function reloadEvents(message = 'カレンダーのデータを同期中...') {
         showLoading(message);
         try {
-            // ① 通信にかかる時間を計測開始
-            console.time('【計測】API通信時間');
-            const updatedEvents = await fetchEvents();
-            console.timeEnd('【計測】API通信時間'); // ここで何秒かかったか出る
+            const profile = await liff.getProfile();
+            const updatedEvents = await fetchEvents(profile.userId);
 
             if (Array.isArray(updatedEvents)) {
-                // ② 描画（カレンダー更新）にかかる時間を計測開始
-                console.time('【計測】カレンダー描画時間');
                 calendar.removeAllEvents();
                 updatedEvents.forEach(ev => calendar.addEvent(ev));
-                console.timeEnd('【計測】カレンダー描画時間'); // ここで何秒かかったか出る
             }
         } catch (error) {
             console.error('イベントの再取得に失敗しました:', error);
@@ -161,9 +156,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (statusValue === 'ng') this.classList.add('selected-ng');
 
             try {
-                // LIFFプロファイル取得の安全化
-                let userName = 'ゲストユーザー';
-                let userId = 'dummy_user_id';
+                const profile = await liff.getProfile();
+                let userName = profile.displayName;
+                let userId = profile.userId;
                 if (typeof liff !== 'undefined' && liff.isInClient()) {
                     try {
                         userId = liff.getDecodedAccessToken()?.sub || userId;
