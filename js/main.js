@@ -3,7 +3,7 @@ import { initializeLiff, getLineUserId } from './liff.js';
 import { initCalendar } from './calendar.js';
 
 // LINE Developerで取得したLIFF IDをここに指定（または環境変数など）
-const LIFF_ID = "YOUR_LIFF_ID_HERE";
+const LIFF_ID = "2011647105-JVOWW7Tw";
 
 document.addEventListener('DOMContentLoaded', async function () {
     // 1. まず最初にLIFFを初期化してLINEログインを完了させる
