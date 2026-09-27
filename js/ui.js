@@ -37,8 +37,10 @@ export function generateDrumTimeOptions() {
 export function setupModals() {
     const userModal = document.getElementById('user-modal');
     const adminModal = document.getElementById('admin-modal');
+    const locationModal = document.getElementById('location-modal');
     const userModalCloseBtn = document.getElementById('modal-close-btn');
     const adminModalCloseBtn = document.getElementById('admin-modal-close');
+    const locationModalCloseBtn = document.getElementById('location-modal-close');
 
     if (userModalCloseBtn && userModal) {
         userModalCloseBtn.addEventListener('click', () => userModal.classList.remove('active'));
@@ -54,6 +56,14 @@ export function setupModals() {
     if (adminModal) {
         adminModal.addEventListener('click', (e) => {
             if (e.target === adminModal) adminModal.classList.remove('active');
+        });
+    }
+    if (locationModalCloseBtn && locationModal) {
+        locationModalCloseBtn.addEventListener('click', () => locationModal.classList.remove('active'));
+    }
+    if (locationModal) {
+        locationModal.addEventListener('click', (e) => {
+            if (e.target === locationModal) locationModal.classList.remove('active');
         });
     }
 }

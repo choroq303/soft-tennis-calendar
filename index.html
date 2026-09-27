@@ -44,7 +44,7 @@
 
     <!-- 👇 管理者用メニューに目印クラスをつけ、初期は非表示にする -->
     <button class="menu-item admin-only" data-target="admin-event">予定管理</button>
-    <button class="menu-item admin-only" data-target="admin-court">コート設定</button>
+    <button class="menu-item admin-only" data-target="admin-location">施設管理</button>
   </nav>
 
   <!-- メインコンテンツ領域 -->
@@ -62,11 +62,11 @@
     </div>
 
     <!-- コート管理画面 -->
-    <div id="admin-court" class="view-panel">
+    <div id="admin-location" class="view-panel">
       <div class="panel-card p-4 bg-white rounded-lg shadow">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold text-gray-700">コート管理</h3>
-          <button id="open-court-modal-btn" class="btn btn-primary btn-sm">+ 新規コート追加</button>
+          <h3 class="text-lg font-bold text-gray-700">施設管理</h3>
+          <button id="open-location-modal-btn" class="btn btn-primary btn-sm">+ 施設追加</button>
         </div>
 
         <!-- コート一覧テーブル -->
@@ -80,7 +80,7 @@
                 <th class="text-right">操作</th>
               </tr>
             </thead>
-            <tbody id="court-table-body">
+            <tbody id="location-table-body">
               <!-- JSで動的に行を挿入します -->
               <tr>
                 <td colspan="4" class="text-center text-gray-400 py-4">読み込み中...</td>
@@ -99,7 +99,7 @@
 
       <div class="modal-body">
         <p><strong>場所:</strong> <span id="modal-location">-</span></p>
-        <p><strong>コート:</strong> <span id="modal-court">-</span></p>
+        <p><strong>コート:</strong> <span id="modal-court-number">-</span></p>
         <p><strong>時間:</strong> <span id="modal-time">-</span></p>
 
         <div class="modal-status-section">
@@ -251,18 +251,18 @@
   </div>
 
   <!-- === コート登録・編集用モーダル === -->
-  <div id="court-modal" class="modal-overlay hidden">
-    <div class="modal-content bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-      <h3 id="court-modal-title" class="modal-title text-lg font-bold mb-4">コートの新規登録</h3>
+  <div id="location-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="location-modal-title" class="modal-title text-lg font-bold mb-4">コートの新規登録</h3>
 
       <div class="modal-body space-y-4">
         <!-- 隠しID（編集時に使用） -->
-        <input type="hidden" id="court-id">
+        <input type="hidden" id="location-id">
 
         <!-- 名前 -->
         <div class="form-group">
           <label class="block text-sm font-bold text-gray-600 mb-1">名前</label>
-          <input type="text" id="court-input-name" placeholder="例: 円山庭球場"
+          <input type="text" id="location-input-name" placeholder="例: 円山庭球場"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
         </div>
 
@@ -270,7 +270,7 @@
         <div class="form-group">
           <label class="block text-sm font-bold text-gray-600 mb-1">キャンセル期限</label>
           <div class="flex items-center">
-            <select id="court-input-deadline" class="select select-bordered w-full">
+            <select id="location-input-deadline" class="select select-bordered w-full">
               <option value="0">当日</option>
               <option value="1">1日前</option>
               <option value="2">2日前</option>
@@ -287,7 +287,7 @@
         <div class="form-group">
           <label class="block text-sm font-bold text-gray-600 mb-1">最小人数</label>
           <div class="flex items-center">
-            <select id="court-input-min" class="select select-bordered w-full">
+            <select id="location-input-min" class="select select-bordered w-full">
               <option value="2">2人</option>
               <option value="4" selected>4人</option>
               <option value="6">6人</option>
@@ -299,8 +299,8 @@
       </div>
 
       <div class="modal-footer flex justify-end gap-2 mt-6">
-        <button id="court-modal-close" class="btn btn-ghost">キャンセル</button>
-        <button id="court-save-btn" class="btn btn-primary">保存する</button>
+        <button id="location-modal-close" class="btn btn-ghost">キャンセル</button>
+        <button id="location-save-btn" class="btn btn-primary">保存する</button>
       </div>
     </div>
   </div>

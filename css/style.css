@@ -386,7 +386,6 @@ body {
 
 .modal-overlay.active {
     display: flex;
-    /* activeクラスがついたら表示 */
 }
 
 /* モーダル本体ボックス */

@@ -61,7 +61,7 @@ export function initCalendar(calendarEl, callbacks) {
         eventContent: function (arg) {
             const props = arg.event.extendedProps || {};
             const location = props.location || 'N/A';
-            const court = props.court || 'N/A';
+            const courtNumber = props.courtNumber || 'N/A';
             const startTime = props.startTime || 'N/A';
             const endTime = props.endTime || 'N/A';
 
@@ -81,7 +81,7 @@ export function initCalendar(calendarEl, callbacks) {
 
             // 7行分の要素を追加
             container.appendChild(createRow(location, 'event-location'));
-            container.appendChild(createRow(court, 'event-court'));
+            container.appendChild(createRow(courtNumber, 'event-court-number'));
             container.appendChild(createRow(startTime, 'event-time-start'));
             container.appendChild(createRow(endTime, 'event-time-end'));
             

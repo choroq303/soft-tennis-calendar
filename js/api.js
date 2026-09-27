@@ -52,8 +52,8 @@ export async function fetchEvents(currentUserId = 'dummy_user_id') {
             const formattedEnd = res.end ? res.end.substring(0, 5) : '';
 
             let displayTitle = location;
-            if (res.court) {
-                displayTitle = `${courtName} (${res.court_number})`;
+            if (res.court_number) {
+                displayTitle = `${location} (${res.court_number})`;
             }
 
             return {
@@ -64,7 +64,7 @@ export async function fetchEvents(currentUserId = 'dummy_user_id') {
                 extendedProps: {
                     date: res.date,
                     location: res.locations.name,
-                    court: res.court_number,
+                    courtNumber: res.court_number,
                     startTime: formattedStart,
                     endTime: formattedEnd,
                     counts: counts,

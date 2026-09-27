@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const dateDisplay = document.getElementById('admin-display-date');
                 if (dateDisplay) dateDisplay.textContent = info.dateStr;
 
-                await populateCourtSelect('');
+                await populateLocationSelect('');
 
-                const courtInput = document.getElementById('admin-input-court');
-                if (courtInput) courtInput.value = '';
+                const locationInput = document.getElementById('admin-input-location');
+                if (locationInput) locationInput.value = '';
 
                 const timeText = document.getElementById('admin-display-time-text');
                 if (timeText) timeText.textContent = '19:00 ～ 21:00';
@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (titleEl) titleEl.textContent = info.event.title;
                 const locEl = document.getElementById('modal-location');
                 if (locEl) locEl.textContent = props.location || '-';
-                const courtEl = document.getElementById('modal-court');
-                if (courtEl) courtEl.textContent = props.court || '-';
+                const courtNumberEl = document.getElementById('modal-court-number');
+                if (courtNumberEl) courtNumberEl.textContent = props.court_number || '-';
                 const timeEl = document.getElementById('modal-time');
                 if (timeEl) {
                     const startTime = props.startTime || '19:00';
@@ -310,17 +310,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     // ==========================================
     // 🎾 コート管理画面のロジック
     // ==========================================
-    const courtModal = document.getElementById('court-modal');
-    const openCourtModalBtn = document.getElementById('open-court-modal-btn');
-    const courtModalClose = document.getElementById('court-modal-close');
-    const courtSaveBtn = document.getElementById('court-save-btn');
-    const courtModalTitle = document.getElementById('court-modal-title');
+    const locationModal = document.getElementById('location-modal');
+    const openlocationModalBtn = document.getElementById('open-location-modal-btn');
+    const locationModalClose = document.getElementById('location-modal-close');
+    const locationSaveBtn = document.getElementById('location-save-btn');
+    const locationModalTitle = document.getElementById('location-modal-title');
 
-    const courtIdInput = document.getElementById('court-id');
-    const courtNameInput = document.getElementById('court-input-name');
-    const courtDeadlineInput = document.getElementById('court-input-deadline');
-    const courtMinInput = document.getElementById('court-input-min');
-    const courtTableBody = document.getElementById('court-table-body');
+    const locationIdInput = document.getElementById('location-id');
+    const locationNameInput = document.getElementById('location-input-name');
+    const locationDeadlineInput = document.getElementById('location-input-deadline');
+    const locationMinInput = document.getElementById('location-input-min');
+    const locationTableBody = document.getElementById('location-table-body');
 
     // HTMLエスケープ用関数（エラー防止のためここに追加）
     function escapeHtml(str) {
@@ -338,61 +338,60 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // コート一覧をロードしてテーブルに描画する関数
-    async function reloadCourts() {
-        if (!courtTableBody) return;
-        courtTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">読み込み中...</td></tr>`;
+    async function reloadlocations() {
+        if (!locationTableBody) return;
+        locationTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">読み込み中...</td></tr>`;
         try {
-            const courts = await fetchLocations(); // Supabaseからコート一覧を取得
-            if (!courts || courts.length === 0) {
-                courtTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">登録されたコートはありません</td></tr>`;
+            const locations = await fetchLocations(); // Supabaseからコート一覧を取得
+            if (!locations || locations.length === 0) {
+                locationTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">登録されたコートはありません</td></tr>`;
                 return;
             }
 
-            courtTableBody.innerHTML = '';
-            courts.forEach(court => {
+            locationTableBody.innerHTML = '';
+            locations.forEach(location => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover';
 
                 // キャンセル期限の表示成形（数値なら「○日前」、0なら「当日」など）
                 let deadlineText = '-';
-                if (court.cancel_deadline !== null && court.cancel_deadline !== undefined) {
-                    deadlineText = court.cancel_deadline === 0 ? '当日' : court.cancel_deadline + '日前';
+                if (location.cancel_deadline !== null && location.cancel_deadline !== undefined) {
+                    deadlineText = location.cancel_deadline === 0 ? '当日' : location.cancel_deadline + '日前';
                 }
 
                 tr.innerHTML = `
-                <td class="font-bold">${escapeHtml(court.name || '')}</td>
+                <td class="font-bold">${escapeHtml(location.name || '')}</td>
                 <td>${deadlineText}</td>
-                <td>${court.min_participants !== null && court.min_participants !== undefined ? court.min_participants + '人' : '-'}</td>
+                <td>${location.min_participants !== null && location.min_participants !== undefined ? location.min_participants + '人' : '-'}</td>
                 <td class="text-right space-x-2">
-                    <button class="btn btn-xs btn-outline btn-primary edit-court-btn" data-id="${court.id}">編集</button>
-                    <button class="btn btn-xs btn-outline btn-error delete-court-btn" data-id="${court.id}">削除</button>
+                    <button class="btn btn-xs btn-outline btn-primary edit-location-btn" data-id="${location.id}">編集</button>
+                    <button class="btn btn-xs btn-outline btn-error delete-location-btn" data-id="${location.id}">削除</button>
                 </td>
             `;
-                courtTableBody.appendChild(tr);
+                locationTableBody.appendChild(tr);
             });
 
             // 編集ボタンのイベント設定
-            document.querySelectorAll('.edit-court-btn').forEach(btn => {
+            document.querySelectorAll('.edit-location-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = btn.dataset.id;
-                    const court = courts.find(c => c.id === id);
-                    if (!court) return;
+                    const location = locations.find(c => c.id === id);
+                    if (!location) return;
 
-                    courtIdInput.value = court.id;
-                    courtNameInput.value = court.name || '';
+                    locationIdInput.value = location.id;
+                    locationNameInput.value = location.name || '';
 
                     // プルダウンに既存の値を反映（なければデフォルトの4などを指定）
-                    courtDeadlineInput.value = court.cancel_deadline !== null ? court.cancel_deadline : '4';
-                    courtMinInput.value = court.min_participants !== null ? court.min_participants : '4';
+                    locationDeadlineInput.value = location.cancel_deadline !== null ? location.cancel_deadline : '4';
+                    locationMinInput.value = location.min_participants !== null ? location.min_participants : '4';
 
-                    courtModalTitle.textContent = 'コートの編集';
-                    courtModal.classList.remove('hidden');
-                    courtModal.style.display = 'block';
+                    locationModalTitle.textContent = 'コートの編集';
+                    locationModal.classList.add('active');
                 });
             });
 
             // 削除ボタンのイベント設定
-            document.querySelectorAll('.delete-court-btn').forEach(btn => {
+            document.querySelectorAll('.delete-location-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const id = btn.dataset.id;
                     if (!confirm('本当にこのコートを削除しますか？')) return;
@@ -401,7 +400,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         const result = await deleteLocation(id);
                         if (result && result.status === 'success') {
                             alert('コートを削除しました。');
-                            await reloadCourts();
+                            await reloadlocations();
                         } else {
                             alert('削除に失敗しました: ' + (result?.message || '不明なエラー'));
                         }
@@ -414,53 +413,43 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         } catch (e) {
             console.error('コート一覧の取得に失敗:', e);
-            courtTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-error py-4">データの取得に失敗しました</td></tr>`;
+            locationTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-error py-4">データの取得に失敗しました</td></tr>`;
         }
     }
 
     // 「新規コート追加」ボタン
-    if (openCourtModalBtn) {
-        openCourtModalBtn.addEventListener('click', () => {
-            console.log('✨ 新規コート追加ボタンがクリックされました！');
+    if (openlocationModalBtn) {
+        openlocationModalBtn.addEventListener('click', () => {
 
-            if (!courtModal) {
-                console.error('❌ courtModal 要素が見つかりません！');
-                return;
-            }
-
-            courtIdInput.value = '';
-            courtNameInput.value = '';
+            locationIdInput.value = '';
+            locationNameInput.value = '';
 
             // 新規登録時はデフォルト値（例: 4日前、4人）を選択状態にする
-            courtDeadlineInput.value = '4';
-            courtMinInput.value = '4';
+            locationDeadlineInput.value = '4';
+            locationMinInput.value = '4';
 
-            courtModalTitle.textContent = 'コートの新規登録';
+            locationModalTitle.textContent = 'コートの新規登録';
 
-            courtModal.classList.remove('hidden');
-            courtModal.style.display = 'block';
+            locationModal.classList.add('active');
         });
-    } else {
-        console.error('❌ openCourtModalBtn ボタン自体が見つかりません！');
     }
 
     // モーダルを閉じる
-    if (courtModalClose) {
-        courtModalClose.addEventListener('click', () => {
-            courtModal.classList.add('hidden');
-            courtModal.style.display = 'none';
+    if (locationModalClose) {
+        locationModalClose.addEventListener('click', () => {
+            locationModal.classList.remove('active');
         });
     }
 
     // コート保存ボタンの処理部分
-    if (courtSaveBtn) {
-        courtSaveBtn.addEventListener('click', async () => {
-            const id = courtIdInput.value;
-            const name = courtNameInput.value.trim();
+    if (locationSaveBtn) {
+        locationSaveBtn.addEventListener('click', async () => {
+            const id = locationIdInput.value;
+            const name = locationNameInput.value.trim();
 
             // プルダウンから選ばれた値を整数に変換
-            const cancel_deadline = courtDeadlineInput.value !== '' ? parseInt(courtDeadlineInput.value, 10) : null;
-            const min_participants = courtMinInput.value !== '' ? parseInt(courtMinInput.value, 10) : null;
+            const cancel_deadline = locationDeadlineInput.value !== '' ? parseInt(locationDeadlineInput.value, 10) : null;
+            const min_participants = locationMinInput.value !== '' ? parseInt(locationMinInput.value, 10) : null;
 
             if (!name) {
                 alert('コート名を入力してください。');
@@ -473,9 +462,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                 if (result && result.status === 'success') {
                     alert('保存しました！');
-                    courtModal.classList.add('hidden');
-                    courtModal.style.display = 'none';
-                    await reloadCourts();
+                    locationModal.classList.add('active');
+                    locationModal.style.display = 'none';
+                    await reloadlocations();
                 } else {
                     alert('保存に失敗しました: ' + (result?.message || '不明なエラー'));
                 }
@@ -490,8 +479,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     menuItems.forEach(item => {
         item.addEventListener('click', function () {
             const targetId = this.getAttribute('data-target');
-            if (targetId === 'admin-court') {
-                reloadCourts(); // コート設定画面を開いた時に一覧を最新にする
+            if (targetId === 'admin-location') {
+                reloadlocations(); // コート設定画面を開いた時に一覧を最新にする
             }
         });
     });
@@ -512,33 +501,33 @@ function hideLoading() {
 }
 
 // 管理者用モーダルのコート選択プルダウンに、登録済みコートの選択肢を埋め込む関数
-async function populateCourtSelect(selectedCourtId = '') {
-    const courtSelect = document.getElementById('admin-input-location');
-    if (!courtSelect) return;
+async function populateLocationSelect(selectedlocationId = '') {
+    const locationSelect = document.getElementById('admin-input-location');
+    if (!locationSelect) return;
 
     try {
-        const courts = await fetchLocations(); // 登録済みコート一覧を取得
+        const locations = await fetchLocations(); // 登録済みコート一覧を取得
 
-        courtSelect.innerHTML = '<option value="" disabled selected>コートを選択してください</option>';
+        locationSelect.innerHTML = '<option value="" disabled selected>コートを選択してください</option>';
 
-        if (courts && courts.length > 0) {
-            courts.forEach(court => {
+        if (locations && locations.length > 0) {
+            locations.forEach(location => {
                 const option = document.createElement('option');
-                option.value = court.id; // データベースのUUIDやID
-                option.textContent = court.name; // コート名
+                option.value = location.id; // データベースのUUIDやID
+                option.textContent = location.name; // コート名
 
                 // 編集時など、すでに選択されているIDがあれば一致させる
-                if (String(court.id) === String(selectedCourtId)) {
+                if (String(location.id) === String(selectedlocationId)) {
                     option.selected = true;
                 }
 
-                courtSelect.appendChild(option);
+                locationSelect.appendChild(option);
             });
         } else {
             const option = document.createElement('option');
             option.value = "";
             option.textContent = "コートが登録されていません";
-            courtSelect.appendChild(option);
+            locationSelect.appendChild(option);
         }
     } catch (e) {
         console.error('コート一覧の取得に失敗しました:', e);
