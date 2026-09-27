@@ -1,7 +1,21 @@
 import { fetchEvents, saveAttendance, saveAdminEvent, deleteAdminEvent, fetchLocations, saveLocation, deleteLocation } from './api.js'; import { generateDrumTimeOptions, setupModals } from './ui.js';
+import { initializeLiff, getLineUserId } from './liff.js';
 import { initCalendar } from './calendar.js';
 
+// LINE Developerで取得したLIFF IDをここに指定（または環境変数など）
+const LIFF_ID = "YOUR_LIFF_ID_HERE";
+
 document.addEventListener('DOMContentLoaded', async function () {
+    // 1. まず最初にLIFFを初期化してLINEログインを完了させる
+    const profile = await initializeLiff(LIFF_ID);
+
+    if (!profile) {
+        return; // ログイン中の場合はここで処理をストップ（自動でログイン画面に飛ぶため）
+    }
+
+    // 2. LINEのユーザーIDが取れたので、画面の初期化やデータ取得を進める
+    console.log("現在のユーザーID:", profile.userId);
+
     generateDrumTimeOptions();
     setupModals();
 
@@ -217,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const targetId = this.getAttribute('data-target');
             const menuText = this.textContent;
             const headerTitle = document.getElementById('header-title');
-            if (headerTitle) headerTitle.textContent = `ソフトテニスカレンダー - ${menuText}`;
+            if (headerTitle) headerTitle.textContent = `${menuText}`;
 
             currentView = targetId;
             menuItems.forEach(i => i.classList.remove('active'));
