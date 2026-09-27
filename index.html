@@ -63,9 +63,31 @@
 
     <!-- コート管理画面 -->
     <div id="admin-court" class="view-panel">
-      <div class="panel-card">
-        <h3>コート管理</h3>
-        <p>ここにコートのマスタメンテナンス機能が入ります。</p>
+      <div class="panel-card p-4 bg-white rounded-lg shadow">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-700">コート管理</h3>
+          <button id="open-court-modal-btn" class="btn btn-primary btn-sm">+ 新規コート追加</button>
+        </div>
+
+        <!-- コート一覧テーブル -->
+        <div class="overflow-x-auto">
+          <table class="table w-full text-sm">
+            <thead>
+              <tr>
+                <th>名前</th>
+                <th>キャンセル期限</th>
+                <th>最小人数</th>
+                <th class="text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="court-table-body">
+              <!-- JSで動的に行を挿入します -->
+              <tr>
+                <td colspan="4" class="text-center text-gray-400 py-4">読み込み中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </main>
@@ -150,17 +172,20 @@
           </div>
         </div>
 
-        <!-- 場所（しっかり枠をつけた入力フィールド） -->
+        <!-- === 予定登録・編集用モーダル (admin-modal) の中の一例 === -->
         <div class="form-group">
-          <label class="block text-sm font-bold text-gray-600 mb-1">場所</label>
-          <input type="text" id="admin-input-location" placeholder="例: 円山庭球場"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+          <label class="block text-sm font-bold text-gray-600 mb-1">コート・場所</label>
+          <!-- 自由入力の input から select に変更 -->
+          <select id="admin-input-location" class="select select-bordered w-full">
+            <option value="" disabled selected>コートを選択してください</option>
+            <!-- ここに登録済みコートのリストがJSで動的に入ります -->
+          </select>
         </div>
 
         <!-- コート -->
         <div class="form-group">
           <label class="block text-sm font-bold text-gray-600 mb-1">コート</label>
-          <input type="text" id="admin-input-court" placeholder="例: 4番コート"
+          <input type="text" id="admin-input-court-number" placeholder="例: 4番コート"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
         </div>
 
@@ -225,6 +250,61 @@
     </div>
   </div>
 
+  <!-- === コート登録・編集用モーダル === -->
+  <div id="court-modal" class="modal-overlay hidden">
+    <div class="modal-content bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+      <h3 id="court-modal-title" class="modal-title text-lg font-bold mb-4">コートの新規登録</h3>
+
+      <div class="modal-body space-y-4">
+        <!-- 隠しID（編集時に使用） -->
+        <input type="hidden" id="court-id">
+
+        <!-- 名前 -->
+        <div class="form-group">
+          <label class="block text-sm font-bold text-gray-600 mb-1">名前</label>
+          <input type="text" id="court-input-name" placeholder="例: 円山庭球場"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+
+        <!-- キャンセル期限 -->
+        <div class="form-group">
+          <label class="block text-sm font-bold text-gray-600 mb-1">キャンセル期限</label>
+          <div class="flex items-center">
+            <select id="court-input-deadline" class="select select-bordered w-full">
+              <option value="0">当日</option>
+              <option value="1">1日前</option>
+              <option value="2">2日前</option>
+              <option value="3">3日前</option>
+              <option value="4" selected>4日前</option>
+              <option value="5">5日前</option>
+              <option value="7">7日前</option>
+              <option value="14">14日前</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 最小人数 -->
+        <div class="form-group">
+          <label class="block text-sm font-bold text-gray-600 mb-1">最小人数</label>
+          <div class="flex items-center">
+            <select id="court-input-min" class="select select-bordered w-full">
+              <option value="2">2人</option>
+              <option value="4" selected>4人</option>
+              <option value="6">6人</option>
+              <option value="8">8人</option>
+              <option value="10">10人</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer flex justify-end gap-2 mt-6">
+        <button id="court-modal-close" class="btn btn-ghost">キャンセル</button>
+        <button id="court-save-btn" class="btn btn-primary">保存する</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 <!-- 共通ローディングオーバーレイ -->
@@ -254,7 +334,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px; /* スピナーと文字の間隔 */
+    gap: 12px;
+    /* スピナーと文字の間隔 */
   }
 
   .spinner {
@@ -278,6 +359,7 @@
     0% {
       transform: rotate(0deg);
     }
+
     100% {
       transform: rotate(360deg);
     }

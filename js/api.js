@@ -11,7 +11,7 @@ export async function fetchEvents(currentUserId = 'dummy_user_id') {
     try {
         // 1. reservations と attendance をSupabaseから並行取得
         const [resResult, attResult] = await Promise.all([
-            supabase.from('reservations').select('*'),
+            supabase.from('reservations').select('*, locations(id, name, cancel_deadline, min_participants)'),
             supabase.from('attendance').select('*')
         ]);
 
@@ -43,22 +43,28 @@ export async function fetchEvents(currentUserId = 'dummy_user_id') {
 
         // 3. FullCalendar用のイベント配列に整形
         const events = reservations.map(res => {
+            const location = res.locations ? res.locations.name : '未設定のコート';
+
             const counts = summaryMap[res.id] || { ok: 0, pending: 0, ng: 0 };
             const myStatus = userStatusMap[res.id] || null;
 
             const formattedStart = res.start ? res.start.substring(0, 5) : '';
             const formattedEnd = res.end ? res.end.substring(0, 5) : '';
 
+            let displayTitle = location;
+            if (res.court) {
+                displayTitle = `${courtName} (${res.court_number})`;
+            }
 
             return {
                 id: res.id,
-                title: `${res.location} (${res.court})`,
+                title: displayTitle,
                 start: `${res.date}T${res.start}`,
                 end: `${res.date}T${res.end}`,
                 extendedProps: {
                     date: res.date,
-                    location: res.location,
-                    court: res.court,
+                    location: res.locations.name,
+                    court: res.court_number,
                     startTime: formattedStart,
                     endTime: formattedEnd,
                     counts: counts,
@@ -115,8 +121,8 @@ export async function saveAdminEvent(payload) {
         // payload に id があれば更新、なければ新規追加 (upsert)
         const record = {
             date: payload.date,
-            location: payload.location,
-            court: payload.court,
+            locations_id: payload.locations_id,
+            court_number: payload.court_number,
             start: payload.start,
             end: payload.end
         };
@@ -154,6 +160,77 @@ export async function deleteAdminEvent(payload) {
 
     } catch (error) {
         console.error('通信エラー（予定削除）:', error);
+        return { status: 'error', message: error.message };
+    }
+}
+
+// ==========================================
+// 🎾 コート管理用の API 関数
+// ==========================================
+
+/**
+ * コート一覧を取得する
+ */
+export async function fetchLocations() {
+    try {
+        const { data, error } = await supabase
+            .from('locations')
+            .select('*')
+            .order('created_at', { ascending: true }); // 登録順（または任意のカラム順）で並び替え
+
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('fetchLocations error:', error);
+        throw error;
+    }
+}
+
+/**
+ * コート情報を保存する（新規作成・更新兼用 / UPSERT）
+ * @param {Object} payload - { id, name, cancel_deadline, min_participants }
+ */
+export async function saveLocation(payload) {
+    try {
+        // id が空（新規）の場合は、supabaseに自動生成させるためにプロパティを削除またはundefinedにする
+        const dataToSave = {
+            name: payload.name,
+            cancel_deadline: payload.cancel_deadline || null,
+            min_participants: payload.min_participants || 0
+        };
+
+        if (payload.id) {
+            dataToSave.id = payload.id;
+        }
+
+        const { data, error } = await supabase
+            .from('locations')
+            .upsert(dataToSave)
+            .select();
+
+        if (error) throw error;
+        return { status: 'success', data };
+    } catch (error) {
+        console.error('saveLocation error:', error);
+        return { status: 'error', message: error.message };
+    }
+}
+
+/**
+ * コートを削除する
+ * @param {string} id - コートID
+ */
+export async function deleteLocation(id) {
+    try {
+        const { error } = await supabase
+            .from('locations')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return { status: 'success' };
+    } catch (error) {
+        console.error('deleteLocation error:', error);
         return { status: 'error', message: error.message };
     }
 }

@@ -60,10 +60,10 @@ export function initCalendar(calendarEl, callbacks) {
         },
         eventContent: function (arg) {
             const props = arg.event.extendedProps || {};
-            const location = props.location || '円山庭球場';
-            const court = props.court || '4番コート';
-            const startTime = props.startTime || '19:00';
-            const endTime = props.endTime || '21:00';
+            const location = props.location || 'N/A';
+            const court = props.court || 'N/A';
+            const startTime = props.startTime || 'N/A';
+            const endTime = props.endTime || 'N/A';
 
             // 人数データと自分の回答ステータスを取得
             const counts = props.counts || { ok: 0, pending: 0, ng: 0 };
