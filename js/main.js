@@ -1,19 +1,16 @@
 import { fetchEvents, saveAttendance, saveAdminEvent, deleteAdminEvent, fetchLocations, saveLocation, deleteLocation } from './api.js'; import { generateDrumTimeOptions, setupModals } from './ui.js';
-import { initializeLiff, getLineUserId } from './liff.js';
+import { initializeLiff, getLineUserId, getLineUserName } from './liff.js';
 import { initCalendar } from './calendar.js';
 
 // LINE Developerで取得したLIFF IDをここに指定（または環境変数など）
 const LIFF_ID = "2011647105-JVOWW7Tw";
 
 document.addEventListener('DOMContentLoaded', async function () {
-    // 1. まず最初にLIFFを初期化してLINEログインを完了させる
+    // LIFF初期化
     const profile = await initializeLiff(LIFF_ID);
-
     if (!profile) {
-        return; // ログイン中の場合はここで処理をストップ（自動でログイン画面に飛ぶため）
+        return;
     }
-
-    // 2. LINEのユーザーIDが取れたので、画面の初期化やデータ取得を進める
     console.log("現在のユーザーID:", profile.userId);
 
     generateDrumTimeOptions();
@@ -108,8 +105,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function reloadEvents(message = 'カレンダーのデータを同期中...') {
         showLoading(message);
         try {
-            const profile = await liff.getProfile();
-            const updatedEvents = await fetchEvents(profile.userId);
+            const updatedEvents = await fetchEvents(getLineUserId());
 
             if (Array.isArray(updatedEvents)) {
                 calendar.removeAllEvents();
@@ -156,24 +152,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (statusValue === 'ng') this.classList.add('selected-ng');
 
             try {
-                const profile = await liff.getProfile();
-                let userName = profile.displayName;
-                let userId = profile.userId;
-                if (typeof liff !== 'undefined' && liff.isInClient()) {
-                    try {
-                        userId = liff.getDecodedAccessToken()?.sub || userId;
-                        const profile = await liff.getProfile();
-                        userName = profile.displayName || userName;
-                    } catch (liffErr) {
-                        console.warn('LIFF情報の取得に失敗しました:', liffErr);
-                    }
-                }
 
                 const payload = {
                     action: 'saveAttendance',
                     reservations_id: reservationId,
-                    user_id: userId,
-                    user_name: userName,
+                    user_id: getLineUserId(),
+                    user_name: getLineUserName(),
                     status: statusValue
                 };
 
