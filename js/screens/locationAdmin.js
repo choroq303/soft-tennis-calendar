@@ -49,7 +49,7 @@ export function setupLocationAdmin({ onChanged }) {
             return;
         }
         try {
-            await withLoading('施設を保存しています...', () => saveLocation(location));
+            await withLoading(() => saveLocation(location));
             closeModal(modal);
             await reloadLocationList();
             await onChanged();
@@ -60,7 +60,7 @@ export function setupLocationAdmin({ onChanged }) {
 
     async function remove() {
         try {
-            await withLoading('施設を削除しています...', () => deleteLocation(editingLocation.id));
+            await withLoading(() => deleteLocation(editingLocation.id));
             closeModal(modal);
             await reloadLocationList();
             await onChanged();

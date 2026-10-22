@@ -54,20 +54,20 @@ async function start() {
     new ResizeObserver(() => calendar.updateSize()).observe(calendarElement);
 
     // 予定を読み込み直す。起動時（isFirst）に失敗したら、何も表示できないので画面全体のエラーにする
-    async function reloadCalendar(message, { isFirst = false } = {}) {
+    async function reloadCalendar({ isFirst = false } = {}) {
         try {
-            const events = await withLoading(message, () => fetchReservations(user.id));
+            const events = await withLoading(() => fetchReservations(user.id));
             calendar.removeAllEvents();
             events.forEach(event => calendar.addEvent(event));
         } catch (error) {
             if (isFirst) showFatalError('loadReservations', error);
-            else showError('loadReservations', error, { onRetry: () => reloadCalendar(message) });
+            else showError('loadReservations', error, { onRetry: () => reloadCalendar() });
         }
     }
 
     // ---- 各画面 ----
-    setupAttendanceModal({ user, onSaved: () => reloadCalendar('最新の出欠を反映しています...') });
-    setupReservationModal({ onSaved: () => reloadCalendar('予定を更新しています...') });
+    setupAttendanceModal({ user, onSaved: () => reloadCalendar() });
+    setupReservationModal({ onSaved: () => reloadCalendar() });
 
     // リスト表示用の「＋ 予定を追加」：表示中の月に今日が含まれていれば今日、なければその月の1日で開く
     document.getElementById('reservation-add-button').addEventListener('click', () => {
@@ -76,7 +76,7 @@ async function start() {
         const date = today >= currentStart && today < currentEnd ? today : currentStart;
         openNewReservation(toDateString(date));
     });
-    setupLocationAdmin({ onChanged: () => reloadCalendar('予定を更新しています...') });
+    setupLocationAdmin({ onChanged: () => reloadCalendar() });
 
     setupMenu((viewId) => {
         // カレンダーを使う画面なら、カレンダーをその画面へ移す
@@ -88,5 +88,5 @@ async function start() {
         if (viewId === 'view-locations') reloadLocationList();
     });
 
-    await reloadCalendar('カレンダーを読み込んでいます...', { isFirst: true });
+    await reloadCalendar({ isFirst: true });
 }

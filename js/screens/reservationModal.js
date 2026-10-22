@@ -53,7 +53,7 @@ export function setupReservationModal({ onSaved }) {
             return;
         }
         try {
-            await withLoading('予定を保存しています...', () => saveReservation(reservation));
+            await withLoading(() => saveReservation(reservation));
             closeModal(modal);
             await onSaved();
         } catch (error) {
@@ -63,7 +63,7 @@ export function setupReservationModal({ onSaved }) {
 
     async function remove() {
         try {
-            await withLoading('予定を削除しています...', () => deleteReservation(editingId));
+            await withLoading(() => deleteReservation(editingId));
             closeModal(modal);
             await onSaved();
         } catch (error) {

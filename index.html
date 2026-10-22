@@ -257,11 +257,9 @@
     </div>
   </section>
 
-  <div id="loading" class="loading-overlay" hidden>
-    <div class="loading-box">
-      <div class="spinner"></div>
-      <div id="loading-text">読み込み中...</div>
-    </div>
+  <!-- 読み込み中・保存中のくるくる（js/ui/feedback.js の withLoading） -->
+  <div id="loading" class="loading-overlay" role="status" aria-label="読み込み中" hidden>
+    <div class="spinner"></div>
   </div>
 
 </body>

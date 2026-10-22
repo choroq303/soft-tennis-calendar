@@ -33,7 +33,7 @@ let myStatus = null;
 export function setupAttendanceModal({ user, onSaved }) {
     async function save(status) {
         try {
-            await withLoading('出欠を保存しています...', () => saveAttendance({ reservationId, user, status }));
+            await withLoading(() => saveAttendance({ reservationId, user, status }));
             closeModal(modal);
             await onSaved();
         } catch (error) {

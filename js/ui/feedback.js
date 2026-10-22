@@ -7,8 +7,7 @@
 import { describeError } from '../errors.js';
 import { showDialog } from './dialog.js';
 
-export function showLoading(message = '読み込み中...') {
-    document.getElementById('loading-text').textContent = message;
+export function showLoading() {
     document.getElementById('loading').hidden = false;
 }
 
@@ -18,10 +17,10 @@ export function hideLoading() {
 
 /**
  * 処理のあいだローディングを表示する
- * @example await withLoading('保存しています...', () => saveReservation(data));
+ * @example await withLoading(() => saveReservation(data));
  */
-export async function withLoading(message, task) {
-    showLoading(message);
+export async function withLoading(task) {
+    showLoading();
     try {
         return await task();
     } finally {
