@@ -1,60 +1,39 @@
-// ユーザー情報を保持する変数（このファイルの外からは直接書き換えられないようにする）
-let userProfile = {
-    userId: null,
-    displayName: null,
-};
+// ==========================================
+// LINE ログイン（LIFF）とログイン中のユーザー情報
+// ==========================================
+import { CONFIG } from './config.js';
+
+// USE_DUMMY_USER が true のときや、LIFF SDK がない普通のブラウザで動かすときのユーザー
+const DUMMY_USER = { id: 'dummy_user_id_123', name: 'テストユーザー', pictureUrl: null };
 
 /**
- * LIFFの初期化とログイン処理、プロフィールの保持を行う
+ * LIFF を初期化してログイン中のユーザーを返す。
+ * 未ログインなら LINE のログイン画面へ移動するので null を返す（呼び出し側はそこで処理を止める）。
+ * 初期化に失敗したときは例外を投げる（呼び出し側で画面全体のエラーを出す）。
+ * @returns {Promise<{ id: string, name: string, pictureUrl: string | null } | null>}
  */
-export async function initializeLiff(liffId) {
-    // 1. LIFF SDKが読み込まれていない（普通のブラウザでテストしている）場合のフォールバック
-    if (typeof liff === 'undefined') {
-        console.warn("LIFF SDK未検知のため、ブラウザ用ダミーユーザーで動作します。");
-        userProfile = {
-            userId: "dummy_user_id_123",
-            displayName: "テストユーザー(ブラウザ)"
-        };
-        return userProfile;
+export async function initializeLiff() {
+    // エラー表示の確認用：URL に ?failLogin を付けると（USE_DUMMY_USER が true のときだけ）、ログインに失敗したことにする
+    if (CONFIG.USE_DUMMY_USER && new URLSearchParams(location.search).has('failLogin')) {
+        throw Object.assign(new Error('LIFF の初期化に失敗しました（スタブ）'), { code: 'INIT_FAILED' });
+    }
+    if (CONFIG.USE_DUMMY_USER || typeof liff === 'undefined') {
+        console.warn('USE_DUMMY_USER が true、または LIFF SDK がないため、ダミーユーザーで動作します。');
+        return DUMMY_USER;
     }
 
-    try {
-        await liff.init({ liffId: liffId });
-        
-        // 未ログインならLINEログインへ誘導
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return null;
-        }
-        
-        // ログイン中の場合、プロフィールを取得して変数に保持
-        const profile = await liff.getProfile();
-        
-        userProfile = {
-            userId: profile.userId,
-            displayName: profile.displayName
-        };
+    await liff.init({ liffId: CONFIG.LIFF_ID });
 
-        console.log("LINEログイン成功:", userProfile.displayName);
-        return userProfile;
-
-    } catch (error) {
-        console.error("LIFF初期化エラー:", error);
-        // エラー時も動くようにダミーを入れておくか、スルーするか
+    if (!liff.isLoggedIn()) {
+        liff.login();
         return null;
     }
-}
 
-/**
- * 保持しているユーザーIDを取得する関数
- */
-export function getLineUserId() {
-    return userProfile.userId || 'dummy_user_id';
-}
-
-/**
- * 保持しているユーザー名を取得する関数
- */
-export function getLineUserName() {
-    return userProfile.displayName || 'ゲストユーザー';
+    const profile = await liff.getProfile();
+    return {
+        id: profile.userId,
+        name: profile.displayName,
+        // LINE のアイコン画像（設定していない人は undefined）
+        pictureUrl: profile.pictureUrl || null
+    };
 }

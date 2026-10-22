@@ -1,0 +1,909 @@
+/* ==========================================
+   カレンダー（FullCalendar の見た目の上書き）
+     1. 全体・地の色
+     2. ツールバー
+     3. 曜日と日付のセル
+     4. 予定カード
+     5. 2件以上ある日（「+N」）とポップアップ
+     6. リスト表示
+     7. 「＋ 予定を追加」ボタン
+   FullCalendar 側の指定に勝つため、セレクタの先頭に .fc を付けているものが多い
+   ========================================== */
+
+/* ---------- 1. 全体・地の色 ---------- */
+/* 画面いっぱいに表示し、地の色の上に白いセル（3. で作る）を浮かせて見せる */
+#calendar {
+    --calendar-bg: var(--color-calendar-bg); /* リスト表示の日付見出しにも使う */
+    width: 100%;
+    height: 100%;
+    padding: 6px 2px 2px;
+    background: var(--calendar-bg);
+}
+
+/* 予定の追加・編集画面に移動したときは地の色を濃くして、練習日程と見分けられるようにする */
+#view-schedule-edit #calendar {
+    --calendar-bg: var(--color-edit-bg);
+}
+
+#view-schedule-edit .fc {
+    --fc-neutral-bg-color: var(--color-edit-neutral);
+}
+
+/* FullCalendar 公式の CSS 変数で配色を指定する */
+.fc {
+    --fc-border-color: transparent;            /* 区切り線は使わず、セルのすき間で区切る */
+    --fc-page-bg-color: var(--color-surface);
+    --fc-neutral-bg-color: var(--color-subtle);
+    --fc-today-bg-color: transparent;          /* 今日の色はセル（タイル）側で付ける */
+    --fc-button-text-color: var(--color-text);
+    --fc-button-bg-color: var(--color-surface);
+    --fc-button-border-color: var(--color-border);
+    --fc-button-hover-bg-color: var(--color-subtle);
+    --fc-button-hover-border-color: var(--color-border);
+    --fc-button-active-bg-color: var(--color-primary-soft);
+    --fc-button-active-border-color: var(--color-primary-border);
+    --fc-list-event-hover-bg-color: transparent; /* リスト表示はカード側でマウスに反応するので、行には色を付けない */
+    --fc-event-bg-color: var(--color-primary);
+    --fc-event-border-color: var(--color-primary);
+    width: 100%;
+    height: 100%;
+    font-size: 0.875rem;
+}
+
+/* ---------- 2. ツールバー ---------- */
+.fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 4px;
+    padding: 0 4px;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-strong);
+}
+
+/* ツールバーのボタンも丸くして、下にずらした影を付ける（押すと沈む） */
+.fc .fc-button {
+    height: 32px;
+    min-width: 32px;
+    padding: 0 10px;
+    border-width: 1.5px;
+    border-radius: var(--radius-pill);
+    font-size: 0.85rem;
+    box-shadow: var(--shadow-pop) !important;
+    transition: background-color var(--transition), transform var(--transition);
+}
+
+/* 月移動（＜ ＞）の矢印はメインの色にして、画面の色（練習日程はミント、管理メニューはアクア）に合わせる */
+.fc .fc-prev-button,
+.fc .fc-next-button {
+    color: var(--color-primary);
+}
+
+.fc .fc-button:active {
+    transform: translateY(2px);
+    box-shadow: none !important;
+}
+
+.fc .fc-button:focus-visible {
+    outline: 2px solid var(--color-primary-border);
+    outline-offset: 1px;
+}
+
+/* ---- 表示切替（月／リスト）：トグルスイッチ ----
+   溝の中を白いつまみ（::before）が左右に動く。選んでいる側には JS が is-active を付ける（js/calendar.js の datesSet） */
+.fc .fc-button-group {
+    position: relative;
+    gap: 0;
+    padding: 3px;
+    margin-left: 8px !important;
+    border-radius: var(--radius-pill);
+    background: var(--color-border-soft);
+    box-shadow: inset 0 1px 2px oklch(25% 0.05 var(--hue-ink) / 0.12);
+}
+
+.fc .fc-button-group::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    height: calc(100% - 6px);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    transition: transform 200ms ease;
+}
+
+/* リスト表示を選んでいるときは、つまみを右へ */
+.fc .fc-button-group:has(.fc-listToggle-button.is-active)::before {
+    transform: translateX(100%);
+}
+
+.fc .fc-button-group > .fc-button {
+    position: relative; /* つまみより手前にアイコンを出す */
+    z-index: 1;
+    width: 38px;
+    height: 28px;
+    border: 0;
+    border-radius: var(--radius-pill) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.fc .fc-button-group > .fc-button:active {
+    transform: none;
+}
+
+/* ---- 文字の代わりにアイコンを出すボタン（月表示・リスト表示・メニュー）。アイコンは css/base.css の --icon-* ---- */
+.fc .fc-gridToggle-button,
+.fc .fc-listToggle-button,
+.fc .fc-menu-button {
+    position: relative;
+    width: 32px;
+    color: transparent !important; /* ボタンの文字（grid / list / menu）は隠す */
+}
+
+.fc .fc-gridToggle-button::after,
+.fc .fc-listToggle-button::after,
+.fc .fc-menu-button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-text-faint);
+    -webkit-mask: var(--icon) center / 17px no-repeat;
+    mask: var(--icon) center / 17px no-repeat;
+    transition: background-color var(--transition);
+}
+
+.fc .fc-gridToggle-button {
+    --icon: var(--icon-calendar);
+}
+
+.fc .fc-listToggle-button {
+    --icon: var(--icon-list);
+}
+
+/* トグルで選んでいる側のアイコンはメインの色 */
+.fc .fc-button-group > .fc-button.is-active::after {
+    background-color: var(--color-primary);
+}
+
+/* ヘッダーがないので、ツールバー右端にメニュー（⋯）を置いている */
+.fc .fc-menu-button {
+    --icon: var(--icon-more);
+    margin-left: 4px !important;
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none !important;
+}
+
+.fc .fc-menu-button::after {
+    background-color: var(--color-text);
+    -webkit-mask-size: 20px;
+    mask-size: 20px;
+}
+
+.fc .fc-menu-button:hover {
+    background-color: var(--color-glass);
+}
+
+/* ---------- 3. 曜日と日付のセル ---------- */
+.fc-theme-standard .fc-scrollgrid,
+.fc-theme-standard th {
+    border: 0;
+}
+
+/* 曜日は中央寄せ */
+.fc .fc-col-header-cell {
+    padding: 2px 0;
+    background: transparent;
+    text-align: center;
+}
+
+.fc .fc-col-header-cell-cushion {
+    padding: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+/* セルの大きさを予定の有無に関係なくそろえる。
+   ・中身（.fc-daygrid-day-frame）を絶対配置にして、行の高さに影響させない
+   ・行の高さは expandRows（js/calendar.js）で均等に割り振る
+   ・ブラウザは余った高さを「各行の元の高さ」に比例して配るので、枠線は消して全セル同じ基準の高さにする
+     （端の週だけ枠線の付き方が違うと、1週目・6週目が小さくなる） */
+.fc-theme-standard td.fc-daygrid-day {
+    position: relative;
+    height: 24px;
+    border: 0;
+}
+
+/* セル本体：白い角丸のタイル。すき間を空けて地の色の上に浮いて見せる。
+   中の予定カードがセルの高さに応じて表示を変えられるよう、コンテナ（day）にしている（4. を参照） */
+.fc .fc-daygrid-day-frame {
+    position: absolute;
+    inset: 1.5px;
+    min-height: 0;
+    padding: 1px;
+    overflow: hidden;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-pop);
+    container: day / size;
+}
+
+/* 前後の月のセルは半透明にして控えめにする */
+.fc .fc-day-other .fc-daygrid-day-frame {
+    background: var(--color-glass);
+    box-shadow: none;
+}
+
+.fc .fc-day-other .fc-daygrid-day-top {
+    opacity: 0.4;
+}
+
+/* 今日：セルの色をレモンイエローにするだけ（日付の数字はほかの日と同じ） */
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+    background: color-mix(in srgb, var(--color-accent) 45%, var(--color-surface));
+}
+
+/* 日付はセルの左上。右側は「予定の追加・編集」画面の「＋」ボタンの場所 */
+.fc .fc-daygrid-day-top {
+    display: flex;
+    flex-direction: row; /* FullCalendar 標準は row-reverse（右寄せ） */
+    justify-content: space-between;
+    align-items: center;
+    padding: 1px 1px 0;
+}
+
+/* 「＋」（その日に予定を追加）ボタン：予定の追加・編集画面のときだけ表示する。
+   予定カードより目立たないよう、普段は背景なしの薄い「＋」だけにする */
+.day-add-button {
+    display: none;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    color: var(--color-text-faint);
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+/* 見た目は小さいまま、押せる範囲だけ広げる */
+.day-add-button::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+}
+
+.day-add-button:hover,
+.day-add-button:active {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+#view-schedule-edit .day-add-button {
+    display: inline-flex;
+}
+
+.fc .fc-daygrid-day-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+/* 曜日の色：日曜・祝日は赤、土曜はくすんだ青 */
+/* 祝日（js/holidays.js の祝日に js/calendar.js が fc-day-holiday を付ける）も日曜と同じ赤 */
+.fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion,
+.fc .fc-day-sun .fc-daygrid-day-number,
+.fc .fc-day-holiday .fc-daygrid-day-number {
+    color: var(--color-sun);
+}
+
+
+.fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion,
+.fc .fc-day-sat .fc-daygrid-day-number {
+    color: var(--color-sat);
+}
+
+/* ---------- 4. 予定カード（js/calendar.js の createEventCard） ---------- */
+/* FullCalendar 標準の点・背景色を消して、自前のカードだけを見せる */
+.fc .fc-daygrid-event,
+.fc .fc-daygrid-dot-event,
+.fc .fc-daygrid-dot-event:hover {
+    margin: 0 0 2px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+}
+
+/* 予定ステータスの色（--event-color）、その色の上に載せる文字の色（--event-on-color）、カードの背景色（--event-bg）。
+   カード・リスト表示の行・ステータスのボタンに付くクラスで切り替える（色の値は css/theme.css） */
+.is-tentative {
+    --event-color: var(--color-reservation-tentative);
+    --event-on-color: var(--color-reservation-tentative-on);
+    --event-bg: var(--color-reservation-tentative-bg);
+}
+
+.is-confirmed {
+    --event-color: var(--color-reservation-confirmed);
+    --event-on-color: var(--color-reservation-confirmed-on);
+    --event-bg: var(--color-reservation-confirmed-bg);
+}
+
+.is-cancelled {
+    --event-color: var(--color-reservation-cancelled);
+    --event-on-color: var(--color-reservation-cancelled-on);
+    --event-bg: var(--color-reservation-cancelled-bg);
+}
+
+.event-card {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 2px 2px 2px 3px;
+    font-size: 0.55rem;
+    line-height: 1.15;
+    color: var(--color-text);
+    background: var(--event-bg);
+    border-radius: var(--radius-card);
+}
+
+/* 開催未定と開催決定は「白っぽいカード＋枠線」という同じ作りにして、差を付けすぎずに見分けられるようにする。
+     開催未定：白に点線（まだ決まっていない）
+     開催決定：ごく淡いミントに実線
+   枠線は outline で描き、カードの大きさを変えない（セルの低い画面ではみ出さないように） */
+.event-card.is-tentative {
+    outline: 1px dashed var(--color-card-line);
+    outline-offset: -1px;
+}
+
+.event-card.is-confirmed {
+    outline: 1px solid var(--color-card-line);
+    outline-offset: -1px;
+}
+
+/* 「+N」：白に実線（枠線の色は予定カードと同じ）。5. の基本の指定より後に効かせるため .fc-daygrid-day-frame を足して強くしている */
+.fc .fc-daygrid-day-frame .fc-daygrid-more-link {
+    outline: 1px solid var(--color-card-line);
+    outline-offset: -1px;
+}
+
+/* キャンセルの予定：ポジティブな色の薄いものに斜線、施設名と時刻に取り消し線、人数の代わりに赤い「キャンセル」 */
+.event-card.is-cancelled {
+    background:
+        repeating-linear-gradient(-45deg, transparent 0 4px, color-mix(in srgb, var(--event-color) 45%, transparent) 4px 6px),
+        var(--event-bg);
+}
+
+/* カードの中の文字は、どの行も同じ文字色（施設名は太字）。キャンセルの予定だけ全体を薄くする */
+.event-card.is-cancelled,
+.event-card.is-cancelled .event-location {
+    color: var(--color-text-faint);
+}
+
+.event-card.is-cancelled .event-location,
+.event-card.is-cancelled .event-time {
+    text-decoration: line-through;
+}
+
+/* 「キャンセル」（全角5文字）をセル幅（約40px）に収めるため、画面幅に合わせて少し小さくし字間を詰める
+   （.event-row の文字サイズより強くするため .event-row を付けている） */
+.event-row.event-cancelled-label {
+    font-size: min(0.55rem, 2vw);
+    letter-spacing: -0.06em;
+    font-weight: 800;
+}
+
+/* 備考があることを示すメモのアイコン（カードの右下。人数は左寄せなので右下は空いている） */
+.event-note-mark {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 0.85em;
+    height: 0.85em;
+    color: color-mix(in srgb, var(--event-color) 85%, black);
+}
+
+.event-note-mark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* 各行：はみ出た部分は「…」で省略 */
+.event-row {
+    display: block;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event-location {
+    font-weight: 700;
+    color: var(--color-text-strong);
+}
+
+/* 施設名：セル内は省略名、「+N」のポップアップは正式名称（js/calendar.js の createLocationRow） */
+.event-location-full {
+    display: none;
+}
+
+.fc .fc-more-popover .event-location-short {
+    display: none;
+}
+
+.fc .fc-more-popover .event-location-full {
+    display: inline;
+}
+
+/* 時刻：施設の色を少し暗くして読みやすくする */
+.event-time {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 時刻は1行版（19-21）と2行版（19:00／～21:00）の両方が入っている。普段は1行版だけ表示する */
+.event-time-long {
+    display: none;
+}
+
+/* 出欠人数：〇・△・× を縦に並べる（セル幅が約40pxしかなく、2桁の人数を3つ横に並べると入りきらないため） */
+.event-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.event-status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+    line-height: 1.15;
+}
+
+/* 自分の回答は文字を濃くする。それ以外のアイコンは灰色にする */
+/* 自分の回答：〇△×のマークの周りにだけ、その回答の色の丸い背景を付け、数字もその色にする（色は 〇=緑 △=黄 ×=赤）。
+   丸い背景は box-shadow で描き、行の高さ・幅は変えない（セルの低い画面で「+N」がはみ出さないように） */
+.event-row.event-status {
+    overflow: visible; /* 各行の「はみ出しを隠す」指定のままだと、マークの周りの丸が切れる */
+}
+
+/* 丸が上下の行の文字にかぶらないよう、ほかの行を手前に出す（〇△×の間隔が 0 の小さい画面向け） */
+.event-status-item {
+    position: relative;
+    z-index: 1;
+}
+
+.event-status-item.is-my-choice {
+    z-index: 0;
+    color: color-mix(in srgb, var(--my-color) 80%, black);
+}
+
+.event-status-item.is-my-choice .status-icon {
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--my-color) 25%, var(--color-surface));
+    box-shadow: 0 0 0 0.14em color-mix(in srgb, var(--my-color) 25%, var(--color-surface));
+}
+
+.event-status-item.is-ok {
+    --my-color: var(--color-ok);
+}
+
+.event-status-item.is-pending {
+    --my-color: var(--color-pending);
+}
+
+.event-status-item.is-ng {
+    --my-color: var(--color-ng);
+}
+
+.event-status-item:not(.is-my-choice) .status-icon {
+    color: var(--color-status-inactive);
+}
+
+/* セルの高さ（day コンテナ）に余裕があるほど、〇△×の間隔を広げて見やすくする。
+   数値は「その表示に必要な高さ＋少しの余裕」を実測して決めている（幅375×高さ667の画面でセルの中は約95px）。
+   一番小さい画面（幅320px 程度、セルの中は約78px）では、上の詰めた表示のまま */
+@container day (min-height: 83px) {
+    .event-status {
+        gap: 1px;
+    }
+
+    .event-status-item {
+        line-height: 1.2;
+    }
+}
+
+@container day (min-height: 88px) {
+    .event-status {
+        gap: 3px;
+        margin-top: 1px;
+    }
+}
+
+/* さらに余裕があるときは、時刻を「19:00」「～21:00」の2行にする（縦長のスマホなど） */
+@container day (min-height: 99px) {
+    .event-time-short {
+        display: none;
+    }
+
+    .event-time-long {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+/* 縦長のスマホ（セルの中が約125px 以上）は余白が多いので、〇△×の間隔をさらに広げる */
+@container day (min-height: 110px) {
+    .event-status {
+        gap: 5px;
+        margin-top: 3px;
+    }
+}
+
+/* 2件以上ある日は、カードの下に「+N」（約15px）が入る。
+   そのぶん上の各段階に切り替える高さを 15px ずつ引き上げる（後に書いたほうが優先されるので、広い範囲から順に戻す） */
+@container day (max-height: 119.9px) {
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-status {
+        gap: 3px;
+        margin-top: 1px;
+    }
+}
+
+@container day (max-height: 112.9px) {
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-time-short {
+        display: inline;
+    }
+
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-time-long {
+        display: none;
+    }
+}
+
+@container day (max-height: 102.9px) {
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-status {
+        gap: 1px;
+        margin-top: 0;
+    }
+}
+
+@container day (max-height: 97.9px) {
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-status {
+        gap: 0;
+    }
+
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-status-item {
+        line-height: 1.15;
+    }
+}
+
+/* セルの中が 93px 未満（幅360px 程度）では、「+N」の行の高さを少し詰める */
+@container day (max-height: 92.9px) {
+    .fc .fc-daygrid-day-frame .fc-daygrid-more-link {
+        line-height: 1.15;
+    }
+}
+
+/* 一番小さい画面（セルの中が 86px 未満。幅320px 程度）では、2件以上ある日は時刻の行を省いて「+N」の場所を作る
+   （時刻は「+N」をタップしたポップアップで見られる） */
+@container day (max-height: 85.9px) {
+    .fc-daygrid-day-events:has(.fc-daygrid-more-link) .event-time {
+        display: none;
+    }
+
+    /* 5. の基本の指定より後に効かせるため、.fc-daygrid-day-frame を足して強くしている */
+    .fc .fc-daygrid-day-frame .fc-daygrid-more-link {
+        margin-top: 0;
+        line-height: 1.1;
+    }
+}
+
+/* ---------- 〇△×アイコン（js/icons.js）：カレンダーとモーダルの両方で使う ---------- */
+/* 大きさは数字の文字サイズ基準（em）にして、どこで使っても数字との比率をそろえる */
+.status-icon {
+    flex-shrink: 0;
+    width: 0.8em;
+    height: 0.8em;
+}
+
+.status-icon--ok {
+    color: var(--color-ok);
+}
+
+.status-icon--pending {
+    color: var(--color-pending);
+}
+
+.status-icon--ng {
+    color: var(--color-ng);
+}
+
+/* 数字の上下の余白を字の高さまで詰めて、アイコンと上下の中心をそろえる（対応ブラウザのみ） */
+.event-status-item > span,
+.count-item > span {
+    text-box: trim-both cap alphabetic;
+}
+
+/* ---------- 5. 2件以上ある日（「+N」）とポップアップ ---------- */
+/* 1日に表示するカードは1件まで（js/calendar.js の dayMaxEvents）。2件以上ある日はカードの下に「+N」を出す。
+   どのセルが2件以上あるかは、FullCalendar が「+N」のリンクを入れるかどうかで判定する（:has）
+   「+N」の左右の位置は上の予定カードにそろえる（カードには FullCalendar 標準の左右 2px の余白がある）。
+   上の余白は FullCalendar が HTML に直接 margin-top: 0 を書くので、ここではなく「+N」本体に付ける */
+.fc .fc-daygrid-day-frame .fc-daygrid-day-bottom {
+    margin: 0 2px;
+    padding: 0;
+}
+
+/* 「+N」：予定カードと同じ見た目（施設の色の薄い背景＋左の線）。
+   色はいつも基本のカードの色（開催未定と同じ）。
+   FullCalendar 標準の余白・左寄せ（float）・はみ出しの切り取り（overflow: hidden）は消し、文字は中央に置く */
+.fc .fc-daygrid-more-link {
+    --event-color: var(--color-reservation-tentative);
+    --event-bg: var(--color-reservation-tentative-bg);
+    position: relative;
+    display: block;
+    float: none;
+    width: 100%;
+    margin: 2px 0 0; /* カードの下の余白 2px と合わせて、カードとの間隔は 4px */
+    padding: 0 3px;
+    overflow: visible;
+    border-radius: var(--radius-card);
+    background: var(--event-bg);
+    color: color-mix(in srgb, var(--event-color) 85%, black);
+    font-size: 0.55rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+}
+
+/* このフォントは文字が上に寄って見えるので、「+N」の大きさは変えずに文字だけ少し下げる */
+.more-link-text {
+    position: relative;
+    top: 0.1em;
+}
+
+/* 見た目は小さいまま、押せる範囲だけ下に広げる（上はカードを押すための場所なので広げない） */
+.fc .fc-daygrid-more-link::before {
+    content: '';
+    position: absolute;
+    inset: -1px 0 -8px;
+}
+
+.fc .fc-daygrid-more-link:hover {
+    color: color-mix(in srgb, var(--event-color) 85%, black);
+}
+
+/* 「+N」をタップしたときの、その日の全予定のポップアップ */
+.fc .fc-more-popover {
+    /* FullCalendar 標準（9999）のままだと、ポップアップ内の予定をタップして開いたモーダルより手前に出てしまう */
+    z-index: 1500;
+    min-width: 160px;
+    overflow: hidden;
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    animation: pop-in 160ms ease-out;
+}
+
+.fc .fc-more-popover .fc-popover-header {
+    padding: 6px 10px;
+    background: var(--color-subtle);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.fc .fc-more-popover .fc-popover-body {
+    padding: 6px;
+}
+
+.fc .fc-more-popover .fc-daygrid-event {
+    margin: 0 0 4px;
+}
+
+/* ポップアップ内は広いので、カードを大きめにして人数も横に並べる */
+.fc .fc-more-popover .event-card {
+    padding: 4px 6px;
+    font-size: 0.75rem;
+}
+
+.fc .fc-more-popover .event-status {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.8em;
+}
+
+/* ---------- 6. リスト表示 ----------
+   FullCalendar 標準の表（左に時刻・丸、右に施設名）をやめて、月表示と同じカードを1件ずつ並べる。
+   カード（js/calendar.js の createEventCard）の中に時刻とステータスも入れているので、表の時刻・丸の列は隠す */
+.fc-theme-standard .fc-list,
+.fc .fc-list-table {
+    border: 0;
+    background: transparent;
+}
+
+.fc .fc-list-event-time,
+.fc .fc-list-event-graphic {
+    display: none;
+}
+
+.fc .fc-list-event td {
+    padding: 4px 6px;
+    border: 0;
+    background: transparent !important; /* 標準の「行にマウスを乗せると色が付く」をやめ、カード側で反応する */
+}
+
+/* 日付の見出し：地の色の上に文字だけ。スクロールすると上に貼り付くので、地の色で塗って下の予定を隠す */
+.fc .fc-list-day > * {
+    background: var(--calendar-bg);
+}
+
+.fc .fc-list-day-cushion {
+    padding: 12px 10px 2px;
+    background: var(--calendar-bg);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+}
+
+.fc .fc-list-day-text,
+.fc .fc-list-day-side-text {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* カード：タップできることが分かるよう右端に「›」を付ける */
+.event-card--list {
+    padding: 10px 34px 10px 12px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    border-radius: var(--radius-card-list);
+    cursor: pointer;
+}
+
+.event-card--list::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid color-mix(in srgb, var(--event-color) 60%, var(--color-surface));
+    border-right: 2px solid color-mix(in srgb, var(--event-color) 60%, var(--color-surface));
+    transform: translateY(-50%) rotate(45deg);
+}
+
+/* 長い施設名・備考は折り返す（月表示用の「折り返さない」設定のままだと、横にはみ出す） */
+.event-card--list .event-row {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* 上段：時刻と予定ステータスのラベル */
+.event-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.event-list-time {
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* キャンセルの予定の時刻は、月表示と同じく取り消し線（色が薄いので文字は補足の色に） */
+.event-card--list.is-cancelled .event-list-time {
+    text-decoration: line-through;
+}
+
+/* 予定ステータスのラベル：丸いラベルに、カードと同じ背景・枠線（影なし）。
+   未定は点線、決定は実線、キャンセルは斜線。文字の色はどれも同じ */
+.event-status-label {
+    flex-shrink: 0;
+    padding: 1px 8px;
+    border: 1px solid var(--color-card-line);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.event-status-label.is-tentative {
+    border-style: dashed;
+}
+
+.event-status-label.is-confirmed {
+    background: var(--color-reservation-confirmed-bg);
+}
+
+.event-status-label.is-cancelled {
+    border-color: var(--color-reservation-cancelled);
+    background:
+        repeating-linear-gradient(-45deg, transparent 0 4px, color-mix(in srgb, var(--color-reservation-cancelled) 45%, transparent) 4px 6px),
+        var(--color-reservation-cancelled-bg);
+}
+
+.event-card--list .event-location {
+    font-size: 0.95rem;
+}
+
+/* 人数は横に並べる */
+.event-card--list .event-status {
+    flex-direction: row;
+    align-items: center;
+    gap: 1em;
+    margin-top: 4px;
+    font-size: 0.8rem;
+}
+
+.event-note {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+/* ---------- 7. 「＋ 予定を追加」ボタン（予定の追加・編集画面のリスト表示のときだけ） ---------- */
+/* 月表示では日付ごとの「＋」で追加できるが、リスト表示には日付のセルがないので代わりにこのボタンを出す */
+#view-schedule-edit {
+    position: relative;
+}
+
+.fab {
+    display: none;
+    position: absolute;
+    right: 16px;
+    bottom: 20px;
+    z-index: 10;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+    padding: 0 20px;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary);
+    box-shadow: var(--shadow-pop-primary), 0 8px 20px oklch(25% 0.05 var(--hue-ink) / 0.2);
+    color: var(--color-on-primary);
+    font-size: 0.9rem;
+    font-weight: 800;
+    transition: background-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.fab:hover {
+    background: var(--color-primary-hover);
+}
+
+.fab:active {
+    transform: translateY(3px);
+    box-shadow: 0 4px 12px oklch(25% 0.05 var(--hue-ink) / 0.2);
+}
+
+#view-schedule-edit:has(.fc-list) .fab {
+    display: inline-flex;
+}
+
+/* リストの一番下の予定がボタンに隠れないよう、ボタンの分だけ下を空ける */
+#view-schedule-edit .fc-list-table {
+    margin-bottom: 84px;
+}

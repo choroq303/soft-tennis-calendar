@@ -1,0 +1,575 @@
+/* ==========================================
+   モーダル
+     1. 共通の枠（js/ui/modal.js）
+     2. 出欠モーダル（js/screens/attendanceModal.js）
+     3. ドラムを回して値を選ぶダイアログ（js/ui/drumPicker.js）
+     4. エラー・削除の確認のダイアログ（js/ui/dialog.js）
+   ========================================== */
+
+/* ---------- 1. 共通の枠 ---------- */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: var(--color-overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* 別のモーダルの上に重ねて開くもの（時刻を選ぶドラム） */
+.modal-overlay--front {
+    z-index: 3000;
+}
+
+/* エラー・確認のダイアログは、ドラムよりもさらに手前 */
+.modal-overlay--dialog {
+    z-index: 3500;
+}
+
+.modal-overlay.is-open {
+    display: flex;
+    animation: fade-in 160ms ease-out;
+}
+
+.modal-overlay.is-open .modal {
+    animation: pop-in 200ms ease-out;
+}
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 360px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    color: var(--color-text);
+    font-size: 0.875rem;
+}
+
+.modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text-strong);
+}
+
+/* 小見出し（「現在の人数」など） */
+.section-label {
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 左右に分ける（左に削除、右にキャンセル・保存） */
+.modal-footer.is-split {
+    justify-content: space-between;
+}
+
+/* ボタンを横いっぱいに均等に並べる */
+.modal-footer.is-full {
+    gap: 8px;
+}
+
+.modal-footer.is-full .btn {
+    flex: 1;
+}
+
+/* ---------- 2. 出欠モーダル ---------- */
+/* 予定の情報（場所・コート・時間・備考） */
+.detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.detail-row {
+    display: flex;
+    gap: 8px;
+}
+
+.detail-row[hidden] {
+    display: none;
+}
+
+.detail-row dt {
+    flex-shrink: 0;
+    min-width: 3.5em;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.detail-note {
+    white-space: pre-wrap; /* 備考の改行をそのまま表示する */
+    overflow-wrap: anywhere;
+}
+
+/* 「〇4 △2 ×1」 */
+.counts {
+    display: flex;
+    gap: 16px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+.count-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    line-height: 1;
+}
+
+/* 現在の人数：タップで展開してメンバー一覧を表示する（<details>） */
+.members {
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.members-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    list-style: none;
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition);
+}
+
+/* ブラウザ標準の三角マークを消して、自前の「メンバー ⌄」を使う */
+.members-summary::-webkit-details-marker {
+    display: none;
+}
+
+.members-summary:hover {
+    background: var(--color-subtle);
+}
+
+.members[open] .members-summary {
+    border-bottom: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.members-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.members-toggle::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform var(--transition);
+}
+
+.members[open] .members-toggle::after {
+    transform: translateY(1px) rotate(-135deg);
+}
+
+/* 展開した中身。人数が多くてもモーダルが伸びすぎないようにスクロールさせる */
+.member-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 10px 12px;
+}
+
+/* 〇△×ごとのまとまり：左にアイコン、右にメンバー */
+.member-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.member-group-icon {
+    width: 16px;
+    height: 16px;
+    margin-top: 6px;
+}
+
+.member-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.member {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 2px 10px 2px 2px;
+    border-radius: 999px;
+    background: var(--color-subtle);
+}
+
+/* LINE のアイコン（ない人は名前の頭文字） */
+.member-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.member-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.8rem;
+}
+
+.member-empty {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* 自分の出欠ボタン（〇・△・×） */
+.attendance-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.attendance-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    transition: background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.attendance-button:hover {
+    background: var(--color-subtle);
+}
+
+.attendance-button:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.status-icon--large {
+    width: 24px;
+    height: 24px;
+}
+
+/* 選択中のボタンは、その回答の色で囲む */
+.attendance-button.is-selected[data-status="ok"] {
+    background: var(--color-ok-soft);
+    border-color: var(--color-ok);
+}
+
+.attendance-button.is-selected[data-status="pending"] {
+    background: var(--color-pending-soft);
+    border-color: var(--color-pending);
+}
+
+.attendance-button.is-selected[data-status="ng"] {
+    background: var(--color-ng-soft);
+    border-color: var(--color-ng);
+}
+
+/* 予定ステータスの帯（開催未定／開催決定／キャンセル）。色は予定ステータスの色（css/calendar.css の .is-confirmed など） */
+.status-banner {
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--event-color) 12%, var(--color-surface));
+    color: color-mix(in srgb, var(--event-color) 80%, black);
+    font-weight: 800;
+    text-align: center;
+}
+
+/* キャンセルは一目でわかるよう、カードと同じ斜線の帯にして、文字は赤にする */
+.status-banner.is-cancelled {
+    padding: 10px 14px;
+    background:
+        repeating-linear-gradient(-45deg, transparent 0 6px, color-mix(in srgb, var(--event-color) 40%, transparent) 6px 9px),
+        color-mix(in srgb, var(--event-color) 16%, var(--color-surface));
+    color: var(--color-danger);
+}
+
+#attendance-select[hidden] {
+    display: none;
+}
+
+/* ---------- 予定ステータスの選択（予定の登録・編集モーダル） ---------- */
+/* 横に並んだボタン。ボタンの形・影は他のボタンと同じ。
+   選んでいないものは、どれも同じ見た目（カードと同じ色・太さの実線）。
+   選んだものだけ、そのステータスのカードに似た見た目にして太字にする（未定は点線、決定は淡い色、キャンセルは斜線）。
+   選んだものは押し込んだ状態として影を消し、少し沈める（点線の下に影があると見づらいため） */
+.segmented {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: 6px;
+}
+
+.segmented-option {
+    position: relative;
+    cursor: pointer;
+}
+
+.segmented-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.segmented-option span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    border: 1px solid var(--color-card-line);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    transition: background-color var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+}
+
+.segmented-option input:checked + span {
+    box-shadow: none;
+    transform: translateY(2px);
+    color: var(--color-text);
+    font-weight: 800;
+}
+
+.segmented-option.is-tentative input:checked + span {
+    border-style: dashed;
+}
+
+.segmented-option.is-confirmed input:checked + span {
+    background: var(--color-reservation-confirmed-bg);
+}
+
+.segmented-option.is-cancelled input:checked + span {
+    border-color: transparent; /* キャンセルのカードには枠線がないので、斜線だけにする */
+    background:
+        repeating-linear-gradient(-45deg, transparent 0 5px, color-mix(in srgb, var(--color-reservation-cancelled) 45%, transparent) 5px 7px),
+        var(--color-reservation-cancelled-bg);
+}
+
+.segmented-option input:focus-visible + span {
+    outline: 2px solid var(--color-primary-border);
+    outline-offset: 2px;
+}
+
+/* ---------- 3. ドラムを回して値を選ぶダイアログ（js/ui/drumPicker.js） ---------- */
+.drum-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 列の数（時間は4列、キャンセル期限などは1列）に応じて横幅を均等に分ける */
+.drum {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 120px;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-subtle);
+}
+
+/* 上下をフェードさせて、ドラムが回っているように見せる */
+.drum::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(var(--color-subtle), transparent 35%, transparent 65%, var(--color-subtle));
+    pointer-events: none;
+}
+
+/* 中央の選択位置を示す帯 */
+.drum-highlight {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 50%;
+    height: 40px;
+    transform: translateY(-50%);
+    border-radius: 10px;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    pointer-events: none;
+}
+
+.drum-list {
+    position: relative;
+    height: 120px;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+}
+
+.drum-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* 上下に余白を持たせて、一番上や一番下の時刻も真ん中に来られるようにする */
+.drum-list::before,
+.drum-list::after {
+    content: '';
+    display: block;
+    height: 40px;
+}
+
+/* ドラムの各行（高さは js/ui/drumPicker.js の ITEM_HEIGHT と合わせる） */
+.drum-item {
+    height: 40px;
+    padding: 0 12px;
+    overflow: hidden;
+    line-height: 40px;
+    text-align: center;
+    text-overflow: ellipsis; /* 長い施設名は … で省略 */
+    white-space: nowrap;
+    scroll-snap-align: center;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.drum-separator {
+    flex-shrink: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-faint);
+}
+
+/* ---------- 4. エラー・削除の確認のダイアログ（js/ui/dialog.js） ---------- */
+.dialog {
+    max-width: 320px;
+    gap: 12px;
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 見出しの左の丸いアイコン。エラー・削除は赤い「!」、案内はメインの色の「i」 */
+.dialog-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.dialog-icon::before {
+    content: 'i';
+}
+
+[data-tone="error"] .dialog-icon,
+[data-tone="danger"] .dialog-icon,
+.fatal-box .dialog-icon {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+[data-tone="error"] .dialog-icon::before,
+[data-tone="danger"] .dialog-icon::before,
+.fatal-box .dialog-icon::before {
+    content: '!';
+}
+
+/* 改行（\n）をそのまま改行として出す */
+.dialog-message {
+    line-height: 1.6;
+    white-space: pre-line;
+    color: var(--color-text);
+}
+
+/* エラーコード：管理者に伝えてもらうので、枠で囲んで目立たせる（スクショで写るように日時も） */
+.dialog-code {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    gap: 2px 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-subtle);
+    font-variant-numeric: tabular-nums;
+}
+
+.dialog-code[hidden] {
+    display: none;
+}
+
+.dialog-code-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+.dialog-code-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--color-text-strong);
+}
+
+.dialog-code-time {
+    grid-column: 2;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+.dialog .modal-footer {
+    margin-top: 4px;
+}

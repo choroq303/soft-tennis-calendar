@@ -1,236 +1,179 @@
+// ==========================================
+// データの読み書き（Supabase）
+// 画面の操作はここでは行わない。失敗したときは例外を投げるので、呼び出し側で表示する。
+//
+// テーブル:
+//   reservations … 予定（date, locations_id, court_number, start, end, note, status）
+//   attendance   … 出欠（reservations_id, user_id, user_name, picture_url, status）
+//   locations    … 施設（name, short_name, cancel_deadline, min_participants）
+// ==========================================
 import { CONFIG } from './config.js';
-import { showLoading, hideLoading } from './ui.js';
+import { createStubClient } from './stub.js';
+import { STATUS_ORDER } from './icons.js';
+import { toReservationStatus } from './reservationStatus.js';
 
-const SUPABASE_URL = CONFIG.SUPABASE_URL;
-const SUPABASE_ANON_KEY = CONFIG.SUPABASE_ANON_KEY;
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = CONFIG.USE_STUB
+    ? createStubClient()
+    : window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
-// 予定データの取得
-export async function fetchEvents(currentUserId) {
-    showLoading();
-    try {
-        // 1. reservations と attendance をSupabaseから並行取得
-        const [resResult, attResult] = await Promise.all([
-            supabase.from('reservations').select('*, locations(id, name, cancel_deadline, min_participants)'),
-            supabase.from('attendance').select('*')
-        ]);
-
-        if (resResult.error) throw resResult.error;
-        if (attResult.error) throw attResult.error;
-
-        const reservations = resResult.data;
-        const attendances = attResult.data;
-
-        // 2. 出欠の集計マップを作成
-        const summaryMap = {}; // { reservations_id: { ok: 0, pending: 0, ng: 0 } }
-        const userStatusMap = {}; // { reservations_id: status }
-
-        attendances.forEach(att => {
-            const resId = att.reservations_id;
-            const status = att.status;
-
-            if (!summaryMap[resId]) {
-                summaryMap[resId] = { ok: 0, pending: 0, ng: 0 };
-            }
-            if (summaryMap[resId][status] !== undefined) {
-                summaryMap[resId][status]++;
-            }
-
-            if (att.user_id === currentUserId) {
-                userStatusMap[resId] = status;
-            }
-        });
-
-        // 3. FullCalendar用のイベント配列に整形
-        const events = reservations.map(res => {
-            const location = res.locations ? res.locations.name : '未設定のコート';
-
-            const counts = summaryMap[res.id] || { ok: 0, pending: 0, ng: 0 };
-            const myStatus = userStatusMap[res.id] || null;
-
-            const formattedStart = res.start ? res.start.substring(0, 5) : '';
-            const formattedEnd = res.end ? res.end.substring(0, 5) : '';
-
-            let displayTitle = location;
-            if (res.court_number) {
-                displayTitle = `${location} (${res.court_number})`;
-            }
-
-            return {
-                id: res.id,
-                title: displayTitle,
-                start: `${res.date}T${res.start}`,
-                end: `${res.date}T${res.end}`,
-                extendedProps: {
-                    date: res.date,
-                    location: res.locations.name,
-                    courtNumber: res.court_number,
-                    startTime: formattedStart,
-                    endTime: formattedEnd,
-                    counts: counts,
-                    myStatus: myStatus
-                }
-            };
-        });
-
-        console.log('【取得したイベント一覧】', events);
-        return events;
-
-    } catch (error) {
-        console.error('通信エラー（予定取得）:', error);
-        return [];
-    } finally {
-        hideLoading();
-    }
+// Supabase の結果 { data, error, status } から data を取り出す。
+// error があれば例外にする（エラーの見分けに使うので、HTTP の番号 status も付ける。js/errors.js）
+function unwrap({ data, error, status }) {
+    if (error) throw Object.assign(error, { status });
+    return data;
 }
 
-// 出欠登録の保存
-export async function saveAttendance(payload) {
-    showLoading();
-    try {
-        // payload = { reservations_id, user_id, user_name, status }
-        const { data, error } = await supabase
-            .from('attendance')
-            .upsert([
-                {
-                    reservations_id: payload.reservations_id,
-                    user_id: payload.user_id,
-                    user_name: payload.user_name,
-                    status: payload.status,
-                    update_at: new Date().toISOString()
-                }
-            ], {
-                onConflict: 'reservations_id,user_id'
-            })
-            .select();
-
-        if (error) throw error;
-        return { status: 'success', data };
-
-    } catch (error) {
-        console.error('通信エラー（出欠登録）:', error);
-        throw error;
-    } finally {
-        hideLoading();
-    }
-}
-
-// 管理者用：予定の保存（新規・編集）
-export async function saveAdminEvent(payload) {
-    try {
-        // payload に id があれば更新、なければ新規追加 (upsert)
-        const record = {
-            date: payload.date,
-            locations_id: payload.locations_id,
-            court_number: payload.court_number,
-            start: payload.start,
-            end: payload.end
-        };
-        if (payload.id) {
-            record.id = payload.id;
-        }
-
-        const { data, error } = await supabase
-            .from('reservations')
-            .upsert([record])
-            .select();
-
-        if (error) throw error;
-        return { status: 'success', data };
-
-    } catch (error) {
-        console.error('通信エラー（予定保存）:', error);
-        return { status: 'error', message: error.message };
-    }
-}
-
-// 管理者用：予定の削除
-export async function deleteAdminEvent(payload) {
-    try {
-        // payload = { id: '...' } または文字列の id そのものを受け取れるように柔軟に
-        const targetId = typeof payload === 'object' ? payload.id : payload;
-
-        const { error } = await supabase
-            .from('reservations')
-            .delete()
-            .eq('id', targetId);
-
-        if (error) throw error;
-        return { status: 'success' };
-
-    } catch (error) {
-        console.error('通信エラー（予定削除）:', error);
-        return { status: 'error', message: error.message };
-    }
-}
-
-// ==========================================
-// 🎾 コート管理用の API 関数
-// ==========================================
+// ------------------------------------------
+// 予定
+// ------------------------------------------
 
 /**
- * コート一覧を取得する
+ * 予定一覧を取得し、FullCalendar に渡せる形にして返す
+ * @param {string} myUserId - 「自分の回答」を判定するためのユーザーID
  */
+export async function fetchReservations(myUserId) {
+    const [reservations, attendance] = await Promise.all([
+        supabase.from('reservations').select('*, locations(id, name, short_name)').then(unwrap),
+        supabase.from('attendance').select('*').then(unwrap)
+    ]);
+
+    const attendanceByReservation = groupAttendance(attendance);
+    return reservations.map(reservation =>
+        toCalendarEvent(reservation, attendanceByReservation.get(reservation.id), myUserId)
+    );
+}
+
+// 出欠を予定ごとにまとめる → Map<予定ID, { members: { ok: [...], pending: [...], ng: [...] }, statusByUser: { ユーザーID: 回答 } }>
+function groupAttendance(rows) {
+    const grouped = new Map();
+    rows.forEach(row => {
+        if (!STATUS_ORDER.includes(row.status)) return; // 古いデータに残っている 'none' などは数えない
+
+        if (!grouped.has(row.reservations_id)) grouped.set(row.reservations_id, emptyAttendance());
+        const entry = grouped.get(row.reservations_id);
+        entry.members[row.status].push({ name: row.user_name || '名前未設定', pictureUrl: row.picture_url || null });
+        entry.statusByUser[row.user_id] = row.status;
+    });
+    return grouped;
+}
+
+function emptyAttendance() {
+    return { members: { ok: [], pending: [], ng: [] }, statusByUser: {} };
+}
+
+// データベースの1行を、カレンダーに表示する予定（FullCalendar のイベント）に変換する
+function toCalendarEvent(reservation, attendance = emptyAttendance(), myUserId) {
+    const locationName = reservation.locations?.name ?? '未設定の施設';
+    // 省略名（月表示のカード用）。設定していない施設は正式名称を使う
+    const locationShortName = reservation.locations?.short_name || locationName;
+    const reservationStatus = toReservationStatus(reservation.status);
+    const courtNumber = reservation.court_number ?? '';
+
+    return {
+        id: reservation.id,
+        title: courtNumber ? `${locationName}（${courtNumber}）` : locationName,
+        start: `${reservation.date}T${reservation.start}`,
+        end: `${reservation.date}T${reservation.end}`,
+        // 予定ステータスで色分けする（css/calendar.css の .is-confirmed など。リスト表示の丸の色にも効く）
+        classNames: [`is-${reservationStatus}`],
+        extendedProps: {
+            date: reservation.date,
+            locationId: reservation.locations_id,
+            locationName,
+            locationShortName,
+            reservationStatus,
+            courtNumber,
+            startTime: toHourMinute(reservation.start),
+            endTime: toHourMinute(reservation.end),
+            note: reservation.note ?? '',
+            members: attendance.members,
+            counts: Object.fromEntries(STATUS_ORDER.map(status => [status, attendance.members[status].length])),
+            myStatus: attendance.statusByUser[myUserId] ?? null
+        }
+    };
+}
+
+// '19:00:00' → '19:00'
+function toHourMinute(time) {
+    return time ? time.slice(0, 5) : '';
+}
+
+/**
+ * 予定を保存する（id があれば更新、なければ新規作成）
+ */
+export async function saveReservation({ id, date, locationId, courtNumber, startTime, endTime, note, reservationStatus }) {
+    const record = {
+        date,
+        locations_id: locationId,
+        court_number: courtNumber,
+        start: startTime,
+        end: endTime,
+        note,
+        status: toReservationStatus(reservationStatus)
+    };
+    if (id) record.id = id;
+
+    return supabase.from('reservations').upsert([record]).select().then(unwrap);
+}
+
+export async function deleteReservation(id) {
+    return supabase.from('reservations').delete().eq('id', id).then(unwrap);
+}
+
+// ------------------------------------------
+// 出欠
+// ------------------------------------------
+
+/**
+ * 自分の出欠を保存する。status が null なら回答を取り消す（行を削除する）
+ * @param {{ reservationId: string, user: { id: string, name: string, pictureUrl: string | null }, status: 'ok' | 'pending' | 'ng' | null }} params
+ */
+export async function saveAttendance({ reservationId, user, status }) {
+    if (!status) {
+        return supabase.from('attendance').delete()
+            .eq('reservations_id', reservationId)
+            .eq('user_id', user.id)
+            .then(unwrap);
+    }
+
+    const record = {
+        reservations_id: reservationId,
+        user_id: user.id,
+        user_name: user.name,
+        picture_url: user.pictureUrl,
+        status,
+        update_at: new Date().toISOString()
+    };
+    return supabase.from('attendance')
+        .upsert([record], { onConflict: 'reservations_id,user_id' })
+        .select()
+        .then(unwrap);
+}
+
+// ------------------------------------------
+// 施設
+// ------------------------------------------
+
 export async function fetchLocations() {
-    try {
-        const { data, error } = await supabase
-            .from('locations')
-            .select('*')
-            .order('created_at', { ascending: true }); // 登録順（または任意のカラム順）で並び替え
-
-        if (error) throw error;
-        return data || [];
-    } catch (error) {
-        console.error('fetchLocations error:', error);
-        throw error;
-    }
+    return supabase.from('locations').select('*').order('created_at', { ascending: true }).then(unwrap);
 }
 
 /**
- * コート情報を保存する（新規作成・更新兼用 / UPSERT）
- * @param {Object} payload - { id, name, cancel_deadline, min_participants }
+ * 施設を保存する（id があれば更新、なければ新規作成）
  */
-export async function saveLocation(payload) {
-    try {
-        // id が空（新規）の場合は、supabaseに自動生成させるためにプロパティを削除またはundefinedにする
-        const dataToSave = {
-            name: payload.name,
-            cancel_deadline: payload.cancel_deadline || null,
-            min_participants: payload.min_participants || 0
-        };
+export async function saveLocation({ id, name, shortName, cancelDeadline, minParticipants }) {
+    const record = {
+        name,
+        short_name: shortName || null, // 空なら「省略名なし」（カードにも正式名称を出す）
+        // 0（当日）を null にしないよう ?? を使う
+        cancel_deadline: cancelDeadline ?? null,
+        min_participants: minParticipants ?? 0
+    };
+    if (id) record.id = id;
 
-        if (payload.id) {
-            dataToSave.id = payload.id;
-        }
-
-        const { data, error } = await supabase
-            .from('locations')
-            .upsert(dataToSave)
-            .select();
-
-        if (error) throw error;
-        return { status: 'success', data };
-    } catch (error) {
-        console.error('saveLocation error:', error);
-        return { status: 'error', message: error.message };
-    }
+    return supabase.from('locations').upsert(record).select().then(unwrap);
 }
 
-/**
- * コートを削除する
- * @param {string} id - コートID
- */
 export async function deleteLocation(id) {
-    try {
-        const { error } = await supabase
-            .from('locations')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-        return { status: 'success' };
-    } catch (error) {
-        console.error('deleteLocation error:', error);
-        return { status: 'error', message: error.message };
-    }
+    return supabase.from('locations').delete().eq('id', id).then(unwrap);
 }

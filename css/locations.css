@@ -1,0 +1,123 @@
+/* ==========================================
+   施設管理画面（js/screens/locationAdmin.js）
+     1. 画面の枠とツールバー（カレンダーと同じ地の色・ボタンの形にそろえる）
+     2. 施設のカード
+   ========================================== */
+
+/* ---------- 1. 画面の枠とツールバー ---------- */
+/* 余白はカレンダー（css/calendar.css の #calendar）と同じ。
+   地の色は管理メニューの画面の色（予定の追加・編集と同じ）にして、練習日程と見分ける */
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 6px 2px 2px;
+    background: var(--color-edit-bg);
+}
+
+/* カレンダーのツールバー（FullCalendar）と同じ高さ・余白 */
+.page-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 32px;
+    margin-bottom: 8px;
+    padding: 0 4px;
+}
+
+.page-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-strong);
+}
+
+.page-toolbar .menu-button {
+    justify-self: end;
+}
+
+/* カレンダーのツールバーのボタン（.fc .fc-button）と同じ見た目 */
+.toolbar-button {
+    justify-self: start;
+    height: 32px;
+    padding: 0 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: background-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.toolbar-button:hover {
+    background: var(--color-subtle);
+}
+
+.toolbar-button:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* ---------- 2. 施設のカード ---------- */
+.location-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0 4px 12px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+/* カレンダーのセルと同じ白いタイル */
+.location-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    padding: 12px 36px 12px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    text-align: left;
+}
+
+/* 右端の「›」：タップで編集できることを示す */
+.location-card::after {
+    content: '';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--color-text-faint);
+    border-right: 2px solid var(--color-text-faint);
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.location-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-strong);
+}
+
+.location-details {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+/* 「読み込み中...」「データなし」などのメッセージ */
+.location-message {
+    padding: 32px 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.location-message.is-error {
+    color: var(--color-danger);
+}

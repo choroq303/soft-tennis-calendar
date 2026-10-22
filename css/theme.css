@@ -1,0 +1,136 @@
+/* ==========================================
+   テーマ（色・角丸・影・文字）
+   見た目の方向性：ポップでさわやか（ミント色の地に白いタイル、深いティールグリーン、今日はライム、
+   ぼかさない「ずらした影」でぽってりした立体感、丸ゴシック）。
+   色はミント色を軸に、緑〜青緑の同じ系統でそろえている。
+   〇△×・キャンセルの赤・日曜の赤・土曜の青は、意味のある色なので色相を変えずに残している
+   色を変えるときはこのファイルだけ直せばよい
+   ========================================== */
+:root {
+    /* ---- 色相（OKLCH の h）。役割ごとに分けているので、ここを変えるだけで印象を変えられる ---- */
+    --hue-base: 170;    /* 地の色・枠線：ミント */
+    --hue-ink: 190;     /* 文字：真っ黒ではなく、深い青緑 */
+    --hue-primary: 175; /* メインの色：ティールグリーン */
+    --hue-accent: 120;  /* 今日：ライム */
+    --hue-edit: 215;    /* 管理メニューの画面（予定の追加・編集、施設管理）の地の色：アクア（ミントと見分けられる、同じ寒色系） */
+
+    /* ---- ベース ---- */
+    --color-bg: oklch(97.5% 0.012 var(--hue-base));          /* アプリ全体の背景 */
+    --color-calendar-bg: oklch(90% 0.07 var(--hue-base));    /* カレンダー・施設一覧の地の色（ミント） */
+    --color-surface: #ffffff;                                /* セル・カード・モーダルなど */
+    --color-subtle: oklch(96.5% 0.015 var(--hue-base));      /* ボタンのホバーなど、ごく薄い面 */
+    --color-border: oklch(87% 0.03 var(--hue-base));
+    --color-border-soft: oklch(92.5% 0.025 var(--hue-base));
+    --color-overlay: oklch(25% 0.04 var(--hue-ink) / 0.45);  /* モーダルの背景を暗くする色 */
+    --color-glass: rgb(255 255 255 / 0.55);                  /* 地の色の上に置く半透明の白 */
+
+    /* ---- 文字 ---- */
+    --color-text: oklch(28% 0.035 var(--hue-ink));           /* 白地でコントラスト 14.5:1 */
+    --color-text-strong: oklch(22% 0.04 var(--hue-ink));
+    --color-text-muted: oklch(48% 0.03 var(--hue-ink));      /* 補足の文字（白地で 6.5:1） */
+    --color-text-faint: oklch(70% 0.025 var(--hue-ink));     /* 前後の月の日付など、読めなくても困らないものだけ */
+
+    /* ---- メインの色 ---- */
+    --color-primary: oklch(52% 0.1 var(--hue-primary));      /* 白い文字を載せて 5.2:1 */
+    --color-primary-hover: oklch(45% 0.1 var(--hue-primary));
+    --color-primary-soft: oklch(95.5% 0.03 var(--hue-primary));
+    --color-primary-border: oklch(84% 0.07 var(--hue-primary));
+    --color-on-primary: #ffffff;
+
+    /* ---- アクセント（今日） ---- */
+    --color-accent: oklch(92% 0.14 var(--hue-accent));
+    --color-accent-soft: oklch(97% 0.06 var(--hue-accent));
+    --color-on-accent: var(--color-text-strong);
+
+    /* ---- 出欠（〇・△・×）：意味のある色なので色相は固定 ---- */
+    --color-ok: oklch(54% 0.12 145);
+    --color-ok-soft: oklch(96% 0.035 145);
+    --color-pending: oklch(62% 0.13 70);
+    --color-pending-soft: oklch(97% 0.04 80);
+    --color-ng: oklch(56% 0.17 28);
+    --color-ng-soft: oklch(96.5% 0.025 28);
+    --color-status-inactive: oklch(74% 0.02 var(--hue-ink)); /* 自分の回答ではない〇△×のアイコン */
+
+    /* ---- 危険な操作（削除など）は × と同じ赤 ---- */
+    --color-danger: var(--color-ng);
+    --color-danger-hover: oklch(49% 0.17 28);
+    --color-danger-soft: var(--color-ng-soft);
+
+    /* ---- 曜日：日曜は × と同じ赤、土曜は青（「土曜は青」の慣習を残す） ---- */
+    --color-sun: var(--color-ng);
+    --color-sat: oklch(53% 0.1 245);
+
+    /* ---- 管理メニューの画面（予定の追加・編集、施設管理）：地の色をアクアにして、練習日程（ミント）と見分ける ---- */
+    --color-edit-bg: oklch(89% 0.06 var(--hue-edit));
+    --color-edit-neutral: oklch(95% 0.03 var(--hue-edit));
+
+    /* ---- 予定ステータス（カレンダーのカードの色分け。種類は js/reservationStatus.js） ----
+       開催未定と「+N」は基本のカード（白に枠線。css/calendar.css）、開催決定はポジティブな色（メインの色）、
+       キャンセルはポジティブな色の薄いもの（さらに斜線と取り消し線。css/calendar.css）。
+       *-on は、その色を塗った上に載せる文字の色（選んだステータスのボタン・ラベル） */
+    --color-reservation-tentative: oklch(38% 0.035 var(--hue-ink));   /* 開催未定：文字と同じ系統の濃い色（ラベル・ボタンに使う） */
+    --color-reservation-tentative-on: #ffffff;
+    --color-reservation-tentative-bg: var(--color-surface);           /* カードの背景：白 */
+    --color-reservation-confirmed: var(--color-primary);              /* 開催決定：ポジティブな色 */
+    --color-reservation-confirmed-on: var(--color-on-primary);
+    --color-reservation-confirmed-bg: oklch(97.5% 0.025 165);         /* カードの背景：ごく薄いミント（未定の白と差を付けすぎない） */
+    --color-reservation-cancelled: oklch(80% 0.06 var(--hue-primary)); /* キャンセル：ポジティブな色の薄いもの */
+    --color-reservation-cancelled-on: var(--color-text-strong);       /* 薄い色なので文字は濃くする */
+    --color-reservation-cancelled-bg: oklch(97% 0.012 var(--hue-primary)); /* カードの背景：ごく薄いティール（さらに斜線） */
+    --color-card-line: oklch(60% 0.06 var(--hue-primary));            /* カードの枠線（未定の点線・決定の実線・「+N」で共通）。メインの色の系統で、小さいカードでも見えるよう少し濃く */
+
+    /* ---- 形 ---- */
+    --radius-card: 4px;       /* 予定カード（月表示）・「+N」 */
+    --radius-card-list: 7px;  /* 予定カード（リスト表示） */
+    --radius-sm: 10px;
+    --radius-md: 14px;  /* セル・ボタン・入力欄 */
+    --radius-lg: 22px;  /* モーダル */
+    --radius-pill: 999px;
+
+    /* ---- 影：ぼかさず下にずらして、ぽってりした立体感を出す（ミントの地より少し濃いミント） ---- */
+    --shadow-pop: 0 2px 0 oklch(80% 0.06 var(--hue-base));               /* セル・カード */
+    --shadow-pop-primary: 0 3px 0 oklch(38% 0.09 var(--hue-primary));    /* メインのボタン */
+    --shadow-pop-danger: 0 3px 0 oklch(86% 0.05 28);                     /* 削除ボタン */
+    --shadow-md: 0 2px 0 oklch(80% 0.06 var(--hue-base)), 0 6px 16px oklch(25% 0.04 var(--hue-ink) / 0.1);
+    --shadow-lg: 0 4px 0 oklch(85% 0.04 var(--hue-base)), 0 16px 40px oklch(25% 0.04 var(--hue-ink) / 0.18);
+
+    /* ---- 文字 ---- */
+    --font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+
+    --transition: 150ms ease;
+}
+
+/* ==========================================
+   管理メニューの画面（予定の追加・編集、施設管理）の色
+   地の色（アクア）に合わせて、メインの色・枠線・影・開催決定のカードもアクア系にする。
+   管理メニューの画面にいる間は、js/ui/menu.js が body に data-mode="admin" を付ける
+   （モーダルやドラムも body の中にあるので、一緒に色が変わる）。
+   文字・〇△×・曜日・今日の色は、練習日程と同じまま。
+   ※ :root の変数は :root で計算済みなので、色相だけでなく、色相から作った変数も書き直している
+   ========================================== */
+body[data-mode="admin"] {
+    --hue-base: var(--hue-edit);
+    --hue-primary: 220;
+
+    --color-bg: oklch(97.5% 0.012 var(--hue-edit));
+    --color-calendar-bg: var(--color-edit-bg);
+    --color-subtle: oklch(96.5% 0.015 var(--hue-edit));
+    --color-border: oklch(87% 0.03 var(--hue-edit));
+    --color-border-soft: oklch(92.5% 0.025 var(--hue-edit));
+
+    --color-primary: oklch(52% 0.1 220);          /* 白い文字を載せて 5.3:1 */
+    --color-primary-hover: oklch(45% 0.1 220);
+    --color-primary-soft: oklch(95.5% 0.03 220);
+    --color-primary-border: oklch(84% 0.07 220);
+
+    --color-reservation-confirmed: var(--color-primary);
+    --color-reservation-confirmed-bg: oklch(97.5% 0.02 var(--hue-edit));
+    --color-reservation-cancelled: oklch(80% 0.06 220);
+    --color-reservation-cancelled-bg: oklch(97% 0.012 220);
+    --color-card-line: oklch(60% 0.06 220);
+
+    --shadow-pop: 0 2px 0 oklch(80% 0.06 var(--hue-edit));
+    --shadow-pop-primary: 0 3px 0 oklch(38% 0.09 220);
+    --shadow-md: 0 2px 0 oklch(80% 0.06 var(--hue-edit)), 0 6px 16px oklch(25% 0.04 var(--hue-ink) / 0.1);
+    --shadow-lg: 0 4px 0 oklch(85% 0.04 var(--hue-edit)), 0 16px 40px oklch(25% 0.04 var(--hue-ink) / 0.18);
+}
