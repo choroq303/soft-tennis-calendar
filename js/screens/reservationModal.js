@@ -7,11 +7,13 @@ import { openModal, closeModal } from '../ui/modal.js';
 import { withLoading, showError, showFieldError, clearFieldError, clearFieldErrors } from '../ui/feedback.js';
 import { confirmDanger, showDialog } from '../ui/dialog.js';
 import { openDrumPicker } from '../ui/drumPicker.js';
+import { openDatePicker } from '../ui/datePicker.js';
+import { formatDateWithWeekday } from '../dates.js';
 import { RESERVATION_STATUSES, DEFAULT_RESERVATION_STATUS } from '../reservationStatus.js';
 
 const modal = document.getElementById('reservation-modal');
 const titleLabel = document.getElementById('reservation-modal-title');
-const dateInput = document.getElementById('reservation-date');
+const dateField = document.getElementById('reservation-date');
 const statusPicker = document.getElementById('reservation-status');
 const locationField = document.getElementById('reservation-location');
 const locationText = locationField.querySelector('.form-trigger-text');
@@ -40,12 +42,20 @@ export function setupReservationModal({ onSaved }) {
     createStatusOptions();
     timeField.addEventListener('click', openTimePicker);
     locationField.addEventListener('click', openLocationPicker);
-    dateInput.addEventListener('change', () => clearFieldError(dateInput));
+    dateField.addEventListener('click', () => {
+        openDatePicker({
+            value: dateField.dataset.value,
+            onSelect: (date) => {
+                setDate(date);
+                clearFieldError(dateField);
+            }
+        });
+    });
 
     async function save() {
         const reservation = readForm();
         if (!reservation.date) {
-            showFieldError(dateInput, '日付を選択してください');
+            showFieldError(dateField, '日付を選択してください');
             return;
         }
         if (!reservation.locationId) {
@@ -119,7 +129,7 @@ export async function openEditReservation(event) {
 async function fillForm({ title, date, locationId, courtNumber, startTime, endTime, note, reservationStatus }) {
     titleLabel.textContent = title;
     clearFieldErrors(modal);
-    dateInput.value = date;
+    setDate(date);
     statusPicker.querySelectorAll('input').forEach(radio => {
         radio.checked = radio.value === reservationStatus;
     });
@@ -136,7 +146,7 @@ function readForm() {
     const { start, end } = timeField.dataset;
     return {
         id: editingId,
-        date: dateInput.value,
+        date: dateField.dataset.value,
         locationId: locationField.dataset.value,
         courtNumber: courtInput.value.trim(),
         startTime: start,
@@ -144,6 +154,12 @@ function readForm() {
         note: noteInput.value.trim(),
         reservationStatus: statusPicker.querySelector('input:checked')?.value ?? DEFAULT_RESERVATION_STATUS
     };
+}
+
+// 日付の欄（値は data-value に 'YYYY-MM-DD'、表示は「2026年10月22日（木）」）
+function setDate(date) {
+    dateField.dataset.value = date ?? '';
+    dateField.querySelector('.form-trigger-text').textContent = date ? formatDateWithWeekday(date) : '日付を選択してください';
 }
 
 // ------------------------------------------

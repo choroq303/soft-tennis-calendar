@@ -144,8 +144,12 @@
 
       <div class="form">
         <div class="form-group">
-          <label class="form-label" for="reservation-date">日付</label>
-          <input type="date" id="reservation-date" class="form-control">
+          <span class="form-label">日付</span>
+          <!-- タップで日付のカレンダー（#date-picker-modal）が開く -->
+          <button type="button" id="reservation-date" class="form-control form-trigger">
+            <span class="form-trigger-text"></span>
+            <span class="form-trigger-arrow">▼</span>
+          </button>
         </div>
 
         <div class="form-group">
@@ -196,6 +200,25 @@
   <!-- ===== ドラムを回して値を選ぶダイアログ（js/ui/drumPicker.js）=====
        練習の時間・施設のキャンセル期限・最少人数で共通。ほかのモーダルの上に重ねて開く。
        ドラムの列は開くたびに JS で作る -->
+  <!-- 日付を選ぶカレンダー（js/ui/datePicker.js）。練習の登録・編集の上に重ねて開く -->
+  <div id="date-picker-modal" class="modal-overlay modal-overlay--front">
+    <div class="modal date-picker">
+      <div class="date-picker-header">
+        <button type="button" id="date-picker-prev" class="round-button round-button--prev" aria-label="前の月"></button>
+        <h3 id="date-picker-title" class="modal-title"></h3>
+        <button type="button" id="date-picker-next" class="round-button round-button--next" aria-label="次の月"></button>
+      </div>
+      <div class="date-picker-weekdays" aria-hidden="true">
+        <span class="is-sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="is-sat">土</span>
+      </div>
+      <div id="date-picker-grid" class="date-picker-grid"></div>
+      <div class="modal-footer is-full">
+        <button type="button" class="btn" data-close-modal>キャンセル</button>
+        <button type="button" id="date-picker-today" class="btn btn-soft-primary">今日</button>
+      </div>
+    </div>
+  </div>
+
   <div id="drum-picker-modal" class="modal-overlay modal-overlay--front">
     <div class="modal">
       <h3 id="drum-picker-title" class="modal-title text-center"></h3>

@@ -9,6 +9,7 @@ import { toDateString } from './dates.js';
 import { createCalendar } from './calendar.js';
 import { setupModalClosing } from './ui/modal.js';
 import { setupDrumPicker } from './ui/drumPicker.js';
+import { setupDatePicker } from './ui/datePicker.js';
 import { setupMenu, toggleMenu, getCurrentView } from './ui/menu.js';
 import { withLoading, showError, showFatalError, showNoticeScreen } from './ui/feedback.js';
 import { setupAttendanceModal, openAttendanceModal } from './screens/attendanceModal.js';
@@ -39,6 +40,7 @@ async function start() {
 
     setupModalClosing();
     setupDrumPicker();
+    setupDatePicker(holidays);
 
     // ---- カレンダー ----
     // 「練習日程」と「練習管理」は同じカレンダーを使い、表示する画面へ移動させる。

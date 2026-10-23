@@ -4,6 +4,7 @@
      2. 出欠モーダル（js/screens/attendanceModal.js）
      3. ドラムを回して値を選ぶダイアログ（js/ui/drumPicker.js）
      4. エラー・削除の確認のダイアログ（js/ui/dialog.js）
+     5. 日付を選ぶカレンダー（js/ui/datePicker.js）
    ========================================== */
 
 /* ---------- 1. 共通の枠 ---------- */
@@ -509,12 +510,13 @@
     justify-content: center;
 }
 
-/* 列の数（時間は4列、キャンセル期限などは1列）に応じて横幅を均等に分ける */
+/* 列の数（時間は2列、キャンセル期限などは1列）に応じて横幅を均等に分ける。
+   高さは5行分（真ん中が選ぶ位置。上下2行ずつ前後の値が見える） */
 .drum {
     position: relative;
     flex: 1;
     min-width: 0;
-    height: 120px;
+    height: 200px;
     overflow: hidden;
     border-radius: var(--radius-md);
     background: var(--color-subtle);
@@ -525,7 +527,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(var(--color-subtle), transparent 35%, transparent 65%, var(--color-subtle));
+    background: linear-gradient(var(--color-subtle), transparent 40%, transparent 60%, var(--color-subtle));
     pointer-events: none;
 }
 
@@ -545,22 +547,23 @@
 
 .drum-list {
     position: relative;
-    height: 120px;
-    overflow-y: scroll;
-    scroll-snap-type: y mandatory;
-    scrollbar-width: none;
+    height: 200px;
+    overflow: hidden;
+    touch-action: none; /* 指の動きはブラウザのスクロールではなく js/ui/drumPicker.js で扱う */
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.drum-list::-webkit-scrollbar {
-    display: none;
+.drum-track {
+    will-change: transform;
 }
 
-/* 上下に余白を持たせて、一番上や一番下の時刻も真ん中に来られるようにする */
-.drum-list::before,
-.drum-list::after {
+/* 上下に2行分の余白を持たせて、一番上や一番下の値も真ん中に来られるようにする */
+.drum-track::before,
+.drum-track::after {
     content: '';
     display: block;
-    height: 40px;
+    height: 80px;
 }
 
 /* ドラムの各行（高さは js/ui/drumPicker.js の ITEM_HEIGHT と合わせる） */
@@ -572,12 +575,19 @@
     text-align: center;
     text-overflow: ellipsis; /* 長い施設名は … で省略 */
     white-space: nowrap;
-    scroll-snap-align: center;
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: var(--color-text);
+    color: var(--color-text-faint);
     cursor: pointer;
+    transition: color 120ms ease, font-size 120ms ease;
+}
+
+/* 真ん中（選ばれる位置）の項目は、濃く大きく */
+.drum-item.is-center {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--color-text-strong);
 }
 
 .drum-separator {
@@ -672,4 +682,110 @@
 
 .dialog .modal-footer {
     margin-top: 4px;
+}
+
+/* ---------- 5. 日付を選ぶカレンダー（js/ui/datePicker.js） ---------- */
+/* アプリのカレンダーと同じ色の決まり：日曜・祝日は赤、土曜は青、今日はライム、選んでいる日はメインの色 */
+.date-picker {
+    max-width: 340px;
+    gap: 10px;
+}
+
+.date-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 月を移る丸いボタン（カレンダーのツールバーの「＜」「＞」と同じ見た目） */
+.round-button {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.round-button:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* 矢印（「く」の字を線で描く） */
+.round-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--color-primary);
+    border-left: 2px solid var(--color-primary);
+}
+
+.round-button--prev::after {
+    transform: translate(-30%, -50%) rotate(-45deg);
+}
+
+.round-button--next::after {
+    transform: translate(-70%, -50%) rotate(135deg);
+}
+
+.date-picker-weekdays,
+.date-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.date-picker-weekdays span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.date-cell {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    background: var(--color-subtle);
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+    transition: background-color var(--transition), transform var(--transition);
+}
+
+.date-cell:active {
+    transform: scale(0.94);
+}
+
+.date-picker-weekdays .is-sun,
+.date-cell.is-sun {
+    color: var(--color-sun);
+}
+
+.date-picker-weekdays .is-sat,
+.date-cell.is-sat {
+    color: var(--color-sat);
+}
+
+/* 前後の月の日：薄く（タップすればその日を選べる） */
+.date-cell.is-other-month {
+    background: transparent;
+    opacity: 0.4;
+}
+
+.date-cell.is-today {
+    background: color-mix(in srgb, var(--color-accent) 60%, var(--color-surface));
+}
+
+.date-cell.is-selected {
+    background: var(--color-primary);
+    box-shadow: var(--shadow-pop-primary);
+    color: var(--color-on-primary);
+    opacity: 1;
 }

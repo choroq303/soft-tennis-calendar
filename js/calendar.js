@@ -15,6 +15,17 @@ export function createCalendar(element, handlers, holidays) {
     const calendar = new FullCalendar.Calendar(element, {
         locale: 'ja',
         initialView: 'dayGridMonth',
+
+        // ---- 日本語にする文言 ----
+        // 日付・曜日は locale で日本語になるが、次の文言は FullCalendar の日本語データを読み込んでいないため英語のままになる。
+        // 画面に出るもの（予定なし）と、読み上げ・長押しで出るもの（ボタンの説明など）を、ここで日本語にする
+        noEventsText: 'この月の練習はありません',
+        buttonHints: { prev: '前の月', next: '次の月' },
+        moreLinkHint: (count) => `ほかの練習 ${count}件を見る`,
+        closeHint: '閉じる',
+        // リスト表示の表の見出し（画面には出ず、読み上げで使われる）
+        timeHint: '時間',
+        eventHint: '練習',
         height: '100%',
 
         // ---- セルの大きさをそろえる ----
@@ -39,10 +50,11 @@ export function createCalendar(element, handlers, holidays) {
         },
         customButtons: {
             // 月表示とリスト表示の切り替え（トグルスイッチの見た目。css/calendar.css の 2.）
-            gridToggle: { text: 'grid', hint: '月表示', click: () => calendar.changeView('dayGridMonth') },
-            listToggle: { text: 'list', hint: 'リスト表示', click: () => calendar.changeView('listMonth') },
+            // text は透明にしてアイコンを出している（読み上げでは text が読まれるので日本語にする）
+            gridToggle: { text: '月表示', hint: '月表示', click: () => calendar.changeView('dayGridMonth') },
+            listToggle: { text: 'リスト表示', hint: 'リスト表示', click: () => calendar.changeView('listMonth') },
             // ヘッダーがないので、メニュー（⋯）もツールバーに置く
-            menu: { text: 'menu', hint: 'メニュー', click: (event, button) => handlers.onMenuClick(event, button) }
+            menu: { text: 'メニュー', hint: 'メニュー', click: (event, button) => handlers.onMenuClick(event, button) }
         },
         // 表示を切り替えたら、トグルの「選んでいる側」を付け替える
         datesSet: (arg) => {
