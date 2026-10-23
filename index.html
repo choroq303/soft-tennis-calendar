@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="./css/calendar.css">
   <link rel="stylesheet" href="./css/modals.css">
   <link rel="stylesheet" href="./css/locations.css">
+  <link rel="stylesheet" href="./css/members.css">
 
   <script type="module" src="./js/main.js"></script>
 </head>
@@ -39,9 +40,13 @@
   <!-- ===== メニュー（☰ を押すと、そのボタンの真下に開く） ===== -->
   <nav id="menu" class="menu">
     <button class="menu-item is-active" data-view="view-calendar">練習日程</button>
-    <!-- 管理者用（admin-only は今は全員に表示されている。権限の仕組みを作るときの目印） -->
+    <!-- 管理メニュー（admin-only）：開発者・管理者のロールがある人にだけ出す（body.can-manage。js/main.js） -->
+    <button class="menu-item admin-only" data-view="view-notifications">
+      通知<span id="notification-badge" class="menu-badge" hidden></span>
+    </button>
     <button class="menu-item admin-only" data-view="view-schedule-edit">予定の追加・編集</button>
     <button class="menu-item admin-only" data-view="view-locations">施設管理</button>
+    <button class="menu-item admin-only" data-view="view-members">メンバー管理</button>
   </nav>
 
   <!-- ===== 画面（メニューで切り替える） ===== -->
@@ -73,6 +78,30 @@
         </div>
         <!-- 施設のカードは js/screens/locationAdmin.js で作る。タップで編集 -->
         <ul id="location-list" class="location-list"></ul>
+      </div>
+    </section>
+
+    <!-- 通知（js/screens/notifications.js）：メンバーの参加申請を承認する -->
+    <section id="view-notifications" class="view-panel">
+      <div class="page">
+        <div class="page-toolbar">
+          <span></span>
+          <h2 class="page-title">通知</h2>
+          <button type="button" class="menu-button js-menu-button" aria-label="メニュー"></button>
+        </div>
+        <ul id="notification-list" class="card-list"></ul>
+      </div>
+    </section>
+
+    <!-- メンバー管理（js/screens/memberAdmin.js）：ロールの付け外し、メンバーから外す -->
+    <section id="view-members" class="view-panel">
+      <div class="page">
+        <div class="page-toolbar">
+          <span></span>
+          <h2 class="page-title">メンバー管理</h2>
+          <button type="button" class="menu-button js-menu-button" aria-label="メニュー"></button>
+        </div>
+        <div id="member-admin-list" class="card-list"></div>
       </div>
     </section>
   </main>
@@ -192,6 +221,39 @@
     </div>
   </div>
 
+  <!-- ===== メンバーの編集モーダル（js/screens/memberAdmin.js） ===== -->
+  <div id="member-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="member-modal-header">
+        <span id="member-modal-avatar" class="member-avatar member-avatar--large"></span>
+        <h3 id="member-modal-name" class="modal-title"></h3>
+      </div>
+
+      <section>
+        <h4 class="section-label">ロール（どちらかがあると管理メニューを使えます）</h4>
+        <div class="role-switches">
+          <label class="role-switch">
+            <span>開発者</span>
+            <input type="checkbox" id="member-role-developer" class="switch">
+          </label>
+          <label class="role-switch">
+            <span>管理者</span>
+            <input type="checkbox" id="member-role-admin" class="switch">
+          </label>
+        </div>
+        <p id="member-modal-self-note" class="member-modal-note" hidden>自分のロールは変えられません（ほかの開発者・管理者に頼んでください）</p>
+      </section>
+
+      <!-- ボタンが横に並びきらないので、「メンバーから外す」は1行に分ける -->
+      <button id="member-remove-button" class="btn btn-danger member-remove-button">メンバーから外す</button>
+
+      <div class="modal-footer is-full">
+        <button class="btn" data-close-modal>キャンセル</button>
+        <button id="member-save-button" class="btn btn-primary">保存する</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 施設の登録・編集モーダル（js/screens/locationAdmin.js） ===== -->
   <div id="location-modal" class="modal-overlay">
     <div class="modal">
@@ -256,14 +318,15 @@
     </div>
   </div>
 
-  <!-- アプリを起動できないときの画面全体のエラー（js/ui/feedback.js の showFatalError） -->
+  <!-- 画面全体のお知らせ（js/ui/feedback.js）：起動できないときのエラー（showFatalError）と、
+       メンバーの承認待ち・承認しないときの案内（showNoticeScreen） -->
   <section id="fatal-screen" class="fatal-screen" hidden>
     <div class="fatal-box">
       <span class="dialog-icon" aria-hidden="true"></span>
       <h2 id="fatal-title" class="fatal-title"></h2>
       <p id="fatal-message" class="dialog-message"></p>
       <p id="fatal-code" class="fatal-code"></p>
-      <button type="button" class="btn btn-primary" onclick="location.reload()">再読み込み</button>
+      <button type="button" id="fatal-button" class="btn btn-primary" onclick="location.reload()">再読み込み</button>
     </div>
   </section>
 

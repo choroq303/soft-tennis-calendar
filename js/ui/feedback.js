@@ -3,6 +3,7 @@
 //   入力の不足   → 欄の下に赤い文字（showFieldError）
 //   処理のエラー → ダイアログ（showError）
 //   起動できない → 画面全体のエラー（showFatalError）
+//   使えない人   → 画面全体の案内（showNoticeScreen。メンバーの承認待ちなど）
 // ==========================================
 import { describeError } from '../errors.js';
 import { showDialog } from './dialog.js';
@@ -61,12 +62,27 @@ export function showFatalError(operation, error) {
     hideLoading();
     const { title, message, code } = describeError(operation, error);
 
+    showFullScreen({ tone: 'error', title, message, code, buttonLabel: '再読み込み' });
+}
+
+/**
+ * アプリを使えない人（承認待ちなど）に、画面全体で案内を出す。ボタンでページを読み込み直す
+ * @param {{ title: string, message: string, buttonLabel: string }} params
+ */
+export function showNoticeScreen({ title, message, buttonLabel }) {
+    hideLoading();
+    showFullScreen({ tone: 'info', title, message, code: null, buttonLabel });
+}
+
+function showFullScreen({ tone, title, message, code, buttonLabel }) {
     const screen = document.getElementById('fatal-screen');
+    screen.dataset.tone = tone;
     document.getElementById('fatal-title').textContent = title;
     document.getElementById('fatal-message').textContent = message;
     const codeLabel = document.getElementById('fatal-code');
     codeLabel.hidden = !code;
     codeLabel.textContent = code ? `エラーコード：${code}` : '';
+    document.getElementById('fatal-button').textContent = buttonLabel;
     screen.hidden = false;
 }
 

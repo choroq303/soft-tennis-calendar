@@ -624,15 +624,13 @@
 }
 
 [data-tone="error"] .dialog-icon,
-[data-tone="danger"] .dialog-icon,
-.fatal-box .dialog-icon {
+[data-tone="danger"] .dialog-icon {
     background: var(--color-danger-soft);
     color: var(--color-danger);
 }
 
 [data-tone="error"] .dialog-icon::before,
-[data-tone="danger"] .dialog-icon::before,
-.fatal-box .dialog-icon::before {
+[data-tone="danger"] .dialog-icon::before {
     content: '!';
 }
 

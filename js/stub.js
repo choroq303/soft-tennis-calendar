@@ -1,6 +1,6 @@
 // ==========================================
 // 🧪 Supabase のスタブ（config.js の USE_STUB: true のときに使う）
-// api.js が使っている書き方（from().select() / upsert() / delete().eq() / order()）だけを真似する。
+// api.js が使っている書き方（from().select() / insert() / upsert() / update() / delete().eq() / order()）だけを真似する。
 // データはメモリ上にあるだけなので、ページを再読み込みすると初期状態に戻る。
 //
 // 仮データ：先月〜来月の3か月分、週3〜4回の予定に、それぞれ約30人が出欠を回答している
@@ -14,6 +14,10 @@ const FAKE_DELAY = 300;
 //   failWrite … 保存・削除を失敗させる
 //   値は network（通信できない）／ server（障害）／ auth（権限がない）／ gone（先に消されていた）／ unknown（想定外）
 //   ログインの失敗は js/liff.js の failLogin
+// メンバー管理の確認用：
+//   asNewUser   … 自分（テストユーザー）をメンバーに入れない（初めて開いた人として「承認待ち」になる）
+//   asRejected  … 自分を「承認しない」にした状態で開く
+//   asMember    … 自分をロールなしのメンバーにする（管理メニューが出ない）
 const FAIL_PARAMS = new URLSearchParams(location.search);
 const FAKE_ERRORS = {
     network: { status: 0, error: { message: 'TypeError: Failed to fetch', code: '' } },
@@ -49,6 +53,7 @@ const MEMBER_NAMES = [
     '前田', '岡田', '長谷川', '藤田', '後藤', '近藤', 'Yamamoto', '村上', '遠藤', '青木'
 ];
 const MY_USER = { id: 'dummy_user_id_123', name: 'テストユーザー' };
+const MY_USER_MEMBER = { user_id: MY_USER.id, user_name: MY_USER.name, picture_url: null, is_admin: false, requested_at: '2026-04-01T00:00:00Z' };
 
 // 平日は夜、土日は午前か午後の枠から選ぶ
 const WEEKDAY_SLOTS = [['19:00:00', '21:00:00'], ['18:30:00', '21:00:00'], ['19:00:00', '22:00:00']];
@@ -161,7 +166,30 @@ function createInitialData() {
         });
     });
 
-    return { locations, reservations, attendance };
+    // メンバー：出欠を付けている人は全員承認済み。自分は開発者。承認待ちが2人
+    const requestedAt = new Date().toISOString();
+    const members = MEMBER_NAMES.map((name, i) => ({
+        user_id: `user-${i + 1}`,
+        user_name: name,
+        picture_url: null,
+        status: 'approved',
+        is_developer: false,
+        is_admin: i < 2, // 佐藤・鈴木は管理者
+        requested_at: '2026-04-01T00:00:00Z'
+    }));
+    members.push(
+        { user_id: 'user-new-1', user_name: '新井', picture_url: null, status: 'pending', is_developer: false, is_admin: false, requested_at: requestedAt },
+        { user_id: 'user-new-2', user_name: 'Kenta', picture_url: null, status: 'pending', is_developer: false, is_admin: false, requested_at: requestedAt }
+    );
+    if (!FAIL_PARAMS.has('asNewUser')) {
+        members.push({
+            ...MY_USER_MEMBER,
+            status: FAIL_PARAMS.has('asRejected') ? 'rejected' : 'approved',
+            is_developer: !FAIL_PARAMS.has('asMember')
+        });
+    }
+
+    return { locations, reservations, attendance, members };
 }
 
 const db = createInitialData();
@@ -188,6 +216,18 @@ class StubQuery {
         this.action = 'upsert';
         this.rows = Array.isArray(rows) ? rows : [rows];
         if (options.onConflict) this.conflictKeys = options.onConflict.split(',');
+        return this;
+    }
+
+    insert(rows) {
+        this.action = 'insert';
+        this.rows = Array.isArray(rows) ? rows : [rows];
+        return this;
+    }
+
+    update(values) {
+        this.action = 'update';
+        this.values = values;
         return this;
     }
 
@@ -220,6 +260,8 @@ class StubQuery {
         const table = db[this.table];
         if (!table) return { data: null, error: { message: `スタブに ${this.table} テーブルがありません` } };
 
+        if (this.action === 'insert') return this.executeInsert(table);
+        if (this.action === 'update') return this.executeUpdate(table);
         if (this.action === 'upsert') return this.executeUpsert(table);
         if (this.action === 'delete') return this.executeDelete(table);
         return this.executeSelect(table);
@@ -242,9 +284,29 @@ class StubQuery {
 
         if (this.orderBy) {
             const { column, ascending } = this.orderBy;
-            data.sort((a, b) => (a[column] > b[column] ? 1 : -1) * (ascending ? 1 : -1));
+            // 同じ値どうしは元の順のまま（0 を返さないと、並びが入れ替わってしまう）
+            data.sort((a, b) => (a[column] === b[column] ? 0 : (a[column] > b[column] ? 1 : -1) * (ascending ? 1 : -1)));
         }
         return { data, error: null };
+    }
+
+    executeInsert(table) {
+        // 本物と同じく、主キーが重複したら 23505 にする（メンバーは user_id が主キー）
+        const key = this.table === 'members' ? 'user_id' : 'id';
+        if (this.rows.some(row => row[key] !== undefined && table.some(t => String(t[key]) === String(row[key])))) {
+            return { data: null, status: 409, error: { message: 'duplicate key value violates unique constraint', code: '23505' } };
+        }
+        const saved = this.rows.map(row => {
+            const newRow = { id: `stub-${nextId++}`, created_at: new Date().toISOString(), ...row };
+            table.push(newRow);
+            return { ...newRow };
+        });
+        return { data: saved, status: 201, error: null };
+    }
+
+    executeUpdate(table) {
+        const updated = table.filter(row => this.matches(row)).map(row => ({ ...Object.assign(row, this.values) }));
+        return { data: updated, status: 200, error: null };
     }
 
     executeUpsert(table) {

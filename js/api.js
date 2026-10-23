@@ -6,6 +6,7 @@
 //   reservations … 予定（date, locations_id, court_number, start, end, note, status）
 //   attendance   … 出欠（reservations_id, user_id, user_name, picture_url, status）
 //   locations    … 施設（name, short_name, cancel_deadline, min_participants）
+//   members      … メンバー（user_id, user_name, picture_url, status, is_developer, is_admin, requested_at）
 // ==========================================
 import { CONFIG } from './config.js';
 import { createStubClient } from './stub.js';
@@ -180,4 +181,63 @@ export async function saveLocation({ id, name, shortName, cancelDeadline, minPar
 
 export async function deleteLocation(id) {
     return supabase.from('locations').delete().eq('id', id).then(unwrap);
+}
+
+// ------------------------------------------
+// メンバー（このアプリを使える人）
+//   status … pending（承認待ち）／ approved（承認済み）／ rejected（承認しない）
+//   is_developer・is_admin … ロール（開発者・管理者）。どちらかがあれば管理メニューを使える
+// ------------------------------------------
+
+/**
+ * 自分のメンバー情報を取得する。まだ登録されていなければ null
+ * @returns {Promise<object | null>}
+ */
+export async function fetchMember(userId) {
+    const rows = await supabase.from('members').select('*').eq('user_id', userId).then(unwrap);
+    return rows[0] ?? null;
+}
+
+/**
+ * 初めて開いた人を「承認待ち」として登録する
+ * @param {{ id: string, name: string, pictureUrl: string | null }} user - liff.js のユーザー
+ */
+export async function registerMember(user) {
+    const rows = await supabase.from('members').insert([{
+        user_id: user.id,
+        user_name: user.name,
+        picture_url: user.pictureUrl,
+        status: 'pending',
+        requested_at: new Date().toISOString()
+    }]).select().then(unwrap);
+    return rows[0];
+}
+
+/**
+ * LINE の名前やアイコンが変わっていたら、メンバー情報にも反映する（開くたびに呼ぶ）
+ */
+export async function updateMemberProfile(user) {
+    return supabase.from('members')
+        .update({ user_name: user.name, picture_url: user.pictureUrl })
+        .eq('user_id', user.id)
+        .then(unwrap);
+}
+
+// メンバー全員（承認待ち・承認しない人も含む）。申請した順
+export async function fetchMembers() {
+    return supabase.from('members').select('*').order('requested_at', { ascending: true }).then(unwrap);
+}
+
+/**
+ * メンバーの状態やロールを変える
+ * @param {string} userId
+ * @param {{ status?: string, is_developer?: boolean, is_admin?: boolean }} changes
+ */
+export async function updateMember(userId, changes) {
+    return supabase.from('members').update(changes).eq('user_id', userId).then(unwrap);
+}
+
+// メンバーから外す（次に開いたときは、また「承認待ち」から始まる）
+export async function removeMember(userId) {
+    return supabase.from('members').delete().eq('user_id', userId).then(unwrap);
 }

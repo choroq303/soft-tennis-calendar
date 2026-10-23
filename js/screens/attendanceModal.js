@@ -11,6 +11,7 @@ import { saveAttendance } from '../api.js';
 import { statusIconSvg, STATUS_ORDER } from '../icons.js';
 import { openModal, closeModal } from '../ui/modal.js';
 import { withLoading, showError } from '../ui/feedback.js';
+import { createAvatar } from '../ui/avatar.js';
 
 const modal = document.getElementById('attendance-modal');
 const statusBanner = document.getElementById('attendance-status');
@@ -135,22 +136,12 @@ function renderMembers(members) {
     container.replaceChildren(...groups);
 }
 
-// メンバー1人分（LINE のアイコン＋名前、あればひとこと）。アイコンがない人は名前の頭文字を丸で表示する
+// メンバー1人分（LINE のアイコン＋名前、あればひとこと）
 function createMemberChip({ name, pictureUrl, comment }) {
     const chip = document.createElement('li');
     chip.className = comment ? 'member has-comment' : 'member';
 
-    let avatar;
-    if (pictureUrl?.startsWith('https://')) {
-        avatar = document.createElement('img');
-        avatar.src = pictureUrl;
-        avatar.alt = '';
-        avatar.loading = 'lazy';
-    } else {
-        avatar = document.createElement('span');
-        avatar.textContent = Array.from(name)[0] ?? '?';
-    }
-    avatar.className = 'member-avatar';
+    const avatar = createAvatar({ name, pictureUrl });
 
     const nameLabel = document.createElement('span');
     nameLabel.className = 'member-name';

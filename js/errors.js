@@ -20,7 +20,11 @@ export const OPERATIONS = {
     saveAttendance: { code: 'ANS', title: '出欠を保存できませんでした' },
     loadLocations: { code: 'LOCLOAD', title: '施設の一覧を読み込めませんでした' },
     saveLocation: { code: 'LOCSAVE', title: '施設を保存できませんでした' },
-    deleteLocation: { code: 'LOCDEL', title: '施設を削除できませんでした' }
+    deleteLocation: { code: 'LOCDEL', title: '施設を削除できませんでした' },
+    loadMember: { code: 'MEMBER', title: 'メンバー情報を読み込めませんでした' },
+    loadMembers: { code: 'MEMLOAD', title: 'メンバーの一覧を読み込めませんでした' },
+    saveMember: { code: 'MEMSAVE', title: 'メンバーを更新できませんでした' },
+    removeMember: { code: 'MEMDEL', title: 'メンバーから外せませんでした' }
 };
 
 const MESSAGES = {
