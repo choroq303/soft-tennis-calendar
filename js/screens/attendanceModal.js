@@ -157,11 +157,26 @@ function createMemberChip({ name, pictureUrl, comment }) {
     nameLabel.textContent = name;
 
     chip.append(avatar, nameLabel);
-    if (comment) {
-        const commentLabel = document.createElement('span');
-        commentLabel.className = 'member-comment';
-        commentLabel.textContent = comment;
-        chip.appendChild(commentLabel);
-    }
+    if (comment) chip.appendChild(createCommentBubble(comment));
     return chip;
+}
+
+// ひとことの吹き出し。長いときは1行で「…」と省略し、タップすると名前の下の行に全文を出す（もう一度タップで戻す）
+function createCommentBubble(comment) {
+    const bubble = document.createElement('button');
+    bubble.type = 'button';
+    bubble.className = 'member-comment';
+    // 省略（…）は中の span で行う（吹き出しの三角がはみ出して見えるよう、吹き出し自体は切り取らない）
+    const text = document.createElement('span');
+    text.className = 'member-comment-text';
+    text.textContent = comment;
+    bubble.appendChild(text);
+    bubble.addEventListener('click', () => {
+        // 省略されていない短いひとことは、タップしても何もしない
+        const isTruncated = text.scrollWidth > text.clientWidth;
+        if (!bubble.classList.contains('is-expanded') && !isTruncated) return;
+        const expanded = bubble.classList.toggle('is-expanded');
+        bubble.setAttribute('aria-expanded', expanded);
+    });
+    return bubble;
 }
