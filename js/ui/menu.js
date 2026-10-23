@@ -1,6 +1,6 @@
 // ==========================================
 // メニュー（☰）と画面の切り替え
-// 画面は3つ：練習日程（view-calendar）／予定の追加・編集（view-schedule-edit）／施設管理（view-locations）
+// 画面は4つ：練習日程（view-calendar）／練習管理（view-schedule-edit）／施設管理（view-locations）／メンバー管理（view-members）
 // ==========================================
 
 const menu = document.getElementById('menu');

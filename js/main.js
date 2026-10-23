@@ -14,7 +14,6 @@ import { withLoading, showError, showFatalError, showNoticeScreen } from './ui/f
 import { setupAttendanceModal, openAttendanceModal } from './screens/attendanceModal.js';
 import { setupReservationModal, openNewReservation, openEditReservation } from './screens/reservationModal.js';
 import { setupLocationAdmin, reloadLocationList } from './screens/locationAdmin.js';
-import { setupNotifications, reloadNotifications } from './screens/notifications.js';
 import { setupMemberAdmin, reloadMemberList } from './screens/memberAdmin.js';
 
 document.addEventListener('DOMContentLoaded', start);
@@ -42,8 +41,8 @@ async function start() {
     setupDrumPicker();
 
     // ---- カレンダー ----
-    // 「練習日程」と「予定の追加・編集」は同じカレンダーを使い、表示する画面へ移動させる。
-    // 予定の追加・編集画面にいるときは、タップで出欠ではなく予定の登録・編集を開く
+    // 「練習日程」と「練習管理」は同じカレンダーを使い、表示する画面へ移動させる。
+    // 練習管理画面にいるときは、タップで出欠ではなく予定の登録・編集を開く
     const calendarElement = document.getElementById('calendar');
     const isEditMode = () => getCurrentView() === 'view-schedule-edit';
 
@@ -79,7 +78,7 @@ async function start() {
     setupAttendanceModal({ user, onSaved: () => reloadCalendar() });
     setupReservationModal({ onSaved: () => reloadCalendar() });
 
-    // リスト表示用の「＋ 予定を追加」：表示中の月に今日が含まれていれば今日、なければその月の1日で開く
+    // リスト表示用の「＋ 練習を追加」：表示中の月に今日が含まれていれば今日、なければその月の1日で開く
     document.getElementById('reservation-add-button').addEventListener('click', () => {
         const { currentStart, currentEnd } = calendar.view;
         const today = new Date();
@@ -87,8 +86,7 @@ async function start() {
         openNewReservation(toDateString(date));
     });
     setupLocationAdmin({ onChanged: () => reloadCalendar() });
-    setupNotifications({ onChanged: () => reloadMemberList() });
-    setupMemberAdmin({ user, onChanged: () => reloadNotifications() });
+    setupMemberAdmin({ user });
 
     setupMenu((viewId) => {
         // カレンダーを使う画面なら、カレンダーをその画面へ移す
@@ -98,13 +96,12 @@ async function start() {
             calendar.updateSize();
         }
         if (viewId === 'view-locations') reloadLocationList();
-        if (viewId === 'view-notifications') reloadNotifications();
         if (viewId === 'view-members') reloadMemberList();
     });
 
     await reloadCalendar({ isFirst: true });
-    // 管理する人には、承認待ちがあれば ☰ に赤い点を出す
-    if (canManage) reloadNotifications();
+    // 管理する人には、承認待ちがあれば ☰ に赤い点を出す（メンバーの一覧を読み込むと一緒に出る）
+    if (canManage) reloadMemberList();
 }
 
 /**
@@ -128,8 +125,7 @@ async function checkMember(user) {
     if (member.status === 'pending') {
         showNoticeScreen({
             title: '承認をお待ちください',
-            message: 'メンバーへの参加を申請しました。\n管理者が承認すると使えるようになります。',
-            buttonLabel: '承認されたか確認する'
+            message: 'メンバーへの参加を申請しました。\n管理者が承認すると使えるようになります。'
         });
         return null;
     }

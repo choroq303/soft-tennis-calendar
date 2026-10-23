@@ -18,7 +18,7 @@ const statusBanner = document.getElementById('attendance-status');
 
 // 予定ステータスの帯に出す文言
 const STATUS_MESSAGES = {
-    tentative: '開催未定（決まりしだいお知らせします）',
+    tentative: '開催未定',
     confirmed: '開催決定',
     cancelled: 'この練習はキャンセルになりました'
 };

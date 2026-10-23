@@ -67,7 +67,8 @@ export function showFatalError(operation, error) {
 
 /**
  * アプリを使えない人（承認待ちなど）に、画面全体で案内を出す。ボタンでページを読み込み直す
- * @param {{ title: string, message: string, buttonLabel: string }} params
+ * @param {{ title: string, message: string, buttonLabel?: string }} params
+ *   buttonLabel がなければ、文字の代わりに更新のアイコンだけのボタンにする
  */
 export function showNoticeScreen({ title, message, buttonLabel }) {
     hideLoading();
@@ -82,7 +83,12 @@ function showFullScreen({ tone, title, message, code, buttonLabel }) {
     const codeLabel = document.getElementById('fatal-code');
     codeLabel.hidden = !code;
     codeLabel.textContent = code ? `エラーコード：${code}` : '';
-    document.getElementById('fatal-button').textContent = buttonLabel;
+    const button = document.getElementById('fatal-button');
+    button.textContent = buttonLabel ?? '';
+    // アイコンだけのときは白い丸ボタン（メインの色のアイコン）、文字のときはメインの色のボタン
+    button.classList.toggle('btn-icon', !buttonLabel);
+    button.classList.toggle('btn-primary', Boolean(buttonLabel));
+    button.setAttribute('aria-label', buttonLabel ?? '更新');
     screen.hidden = false;
 }
 

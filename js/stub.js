@@ -328,7 +328,7 @@ class StubQuery {
         if (this.table === 'locations') {
             const inUse = db.reservations.some(r => table.some(l => this.matches(l) && l.id === r.locations_id));
             if (inUse) {
-                return { data: null, status: 409, error: { message: 'この施設を使っている予定があるため削除できません（スタブ）', code: '23503' } };
+                return { data: null, status: 409, error: { message: 'この施設を使っている練習があるため削除できません（スタブ）', code: '23503' } };
             }
         }
         // 予定を消したら、その予定の出欠も消す（ON DELETE CASCADE 相当）

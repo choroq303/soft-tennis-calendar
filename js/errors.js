@@ -14,9 +14,9 @@
 // 操作ごとの「何ができなかったか」（ダイアログの見出し）と、エラーコードに入れる短い名前
 export const OPERATIONS = {
     login: { code: 'LOGIN', title: 'LINE にログインできませんでした' },
-    loadReservations: { code: 'LOAD', title: '予定を読み込めませんでした' },
-    saveReservation: { code: 'SAVE', title: '予定を保存できませんでした' },
-    deleteReservation: { code: 'DEL', title: '予定を削除できませんでした' },
+    loadReservations: { code: 'LOAD', title: '練習を読み込めませんでした' },
+    saveReservation: { code: 'SAVE', title: '練習を保存できませんでした' },
+    deleteReservation: { code: 'DEL', title: '練習を削除できませんでした' },
     saveAttendance: { code: 'ANS', title: '出欠を保存できませんでした' },
     loadLocations: { code: 'LOCLOAD', title: '施設の一覧を読み込めませんでした' },
     saveLocation: { code: 'LOCSAVE', title: '施設を保存できませんでした' },
@@ -31,7 +31,7 @@ const MESSAGES = {
     network: '通信できませんでした。電波の良いところで、もう一度お試しください。',
     server: 'サーバーにつながりません。しばらく時間をおいて、もう一度お試しください。\n続く場合は、下のエラーコードを管理者に連絡してください。',
     auth: '操作する権限が確認できませんでした。アプリを開き直してください。\nそれでもできない場合は、下のエラーコードを管理者に連絡してください。',
-    inUse: 'この施設を使っている予定があります。\n先に予定の場所を変えるか、予定を削除してください。',
+    inUse: 'この施設を使っている練習があります。\n先に練習の場所を変えるか、練習を削除してください。',
     gone: 'ほかの人が先に削除した可能性があります。\n閉じると、最新の状態に更新します。',
     unknown: '思わぬエラーが起きました。\n下のエラーコードを管理者に連絡してください。'
 };

@@ -1,12 +1,12 @@
 /* ==========================================
    メンバーまわり
-     1. 管理メニューの出し分けと、通知のしるし（js/main.js・js/screens/notifications.js）
-     2. カードの一覧（通知・メンバー管理で共通。画面の枠とツールバーは css/locations.css の .page）
-     3. 通知のカード（参加申請）
+     1. 管理メニューの出し分けと、承認待ちのしるし（js/main.js・js/screens/memberAdmin.js）
+     2. カードの一覧（画面の枠とツールバーは css/locations.css の .page）
+     3. 承認待ちのカード（参加申請）
      4. メンバーのカードと編集モーダル（js/screens/memberAdmin.js）
    ========================================== */
 
-/* ---------- 1. 管理メニューの出し分けと、通知のしるし ---------- */
+/* ---------- 1. 管理メニューの出し分けと、承認待ちのしるし ---------- */
 /* 開発者・管理者のロールがない人には、管理メニューを出さない。
    メニューが「練習日程」だけになるので、☰ ボタンごと隠す */
 body:not(.can-manage) .admin-only,
@@ -30,7 +30,7 @@ body.has-notification .js-menu-button::before {
     background: var(--color-danger);
 }
 
-/* メニューの「通知」の横の件数 */
+/* メニューの「メンバー管理」の横の件数 */
 .menu-badge {
     display: inline-grid;
     place-items: center;
@@ -82,7 +82,7 @@ body.has-notification .js-menu-button::before {
     color: var(--color-text-muted);
 }
 
-/* 「新しい通知はありません」などのメッセージ */
+/* 「読み込み中...」などのメッセージ */
 .card-list-message {
     padding: 32px 16px;
     text-align: center;
@@ -94,8 +94,8 @@ body.has-notification .js-menu-button::before {
     color: var(--color-danger);
 }
 
-/* ---------- 3. 通知のカード（参加申請） ---------- */
-.notification-card {
+/* ---------- 3. 承認待ちのカード（参加申請） ---------- */
+.request-card {
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -105,31 +105,31 @@ body.has-notification .js-menu-button::before {
     box-shadow: var(--shadow-pop);
 }
 
-.notification-card .member-avatar {
+.request-card .member-avatar {
     width: 36px;
     height: 36px;
     font-size: 0.9rem;
 }
 
-.notification-body {
+.request-body {
     flex: 1;
     min-width: 0;
 }
 
-.notification-message {
+.request-message {
     font-size: 0.9rem;
     line-height: 1.5;
     color: var(--color-text);
     overflow-wrap: anywhere;
 }
 
-.notification-time {
+.request-time {
     margin-top: 2px;
     font-size: 0.75rem;
     color: var(--color-text-muted);
 }
 
-.notification-actions {
+.request-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;

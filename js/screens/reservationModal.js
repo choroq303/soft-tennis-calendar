@@ -1,6 +1,6 @@
 // ==========================================
-// 予定の登録・編集モーダル（「予定の追加・編集」画面で開く）
-//   日付の「＋」・セル・「＋ 予定を追加」 → 新規登録 ／ 予定をタップ → 編集（削除もできる）
+// 練習の登録・編集モーダル（「練習管理」画面で開く）
+//   日付の「＋」・セル・「＋ 練習を追加」 → 新規登録 ／ 予定をタップ → 編集（削除もできる）
 // ==========================================
 import { fetchLocations, saveReservation, deleteReservation } from '../api.js';
 import { openModal, closeModal } from '../ui/modal.js';
@@ -74,7 +74,7 @@ export function setupReservationModal({ onSaved }) {
     document.getElementById('reservation-save-button').addEventListener('click', save);
     deleteButton.addEventListener('click', async () => {
         const confirmed = await confirmDanger({
-            title: 'この予定を削除しますか？',
+            title: 'この練習を削除しますか？',
             message: '出欠の回答も一緒に消えます。',
             confirmLabel: '削除する'
         });
@@ -86,7 +86,7 @@ export function setupReservationModal({ onSaved }) {
 export async function openNewReservation(date) {
     editingId = null;
     await fillForm({
-        title: '予定の登録',
+        title: '練習の登録',
         date,
         locationId: '',
         courtNumber: '',

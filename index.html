@@ -41,12 +41,11 @@
   <nav id="menu" class="menu">
     <button class="menu-item is-active" data-view="view-calendar">練習日程</button>
     <!-- 管理メニュー（admin-only）：開発者・管理者のロールがある人にだけ出す（body.can-manage。js/main.js） -->
-    <button class="menu-item admin-only" data-view="view-notifications">
-      通知<span id="notification-badge" class="menu-badge" hidden></span>
-    </button>
-    <button class="menu-item admin-only" data-view="view-schedule-edit">予定の追加・編集</button>
+    <button class="menu-item admin-only" data-view="view-schedule-edit">練習管理</button>
     <button class="menu-item admin-only" data-view="view-locations">施設管理</button>
-    <button class="menu-item admin-only" data-view="view-members">メンバー管理</button>
+    <button class="menu-item admin-only" data-view="view-members">
+      メンバー管理<span id="member-badge" class="menu-badge" hidden></span>
+    </button>
   </nav>
 
   <!-- ===== 画面（メニューで切り替える） ===== -->
@@ -54,17 +53,17 @@
     <!-- 練習日程：予定をタップすると出欠モーダル -->
     <section id="view-calendar" class="view-panel is-active">
       <div class="calendar-slot">
-        <!-- カレンダー本体。「予定の追加・編集」画面に切り替えると、そちらの calendar-slot へ移動する -->
+        <!-- カレンダー本体。「練習管理」画面に切り替えると、そちらの calendar-slot へ移動する -->
         <div id="calendar"></div>
       </div>
     </section>
 
-    <!-- 予定の追加・編集：日付をタップで新規登録、予定をタップで編集。地の色を変えて見分ける -->
+    <!-- 練習管理：日付をタップで新規登録、予定をタップで編集。地の色を変えて見分ける -->
     <section id="view-schedule-edit" class="view-panel">
       <div class="calendar-slot"></div>
       <!-- リスト表示には日付のセルがない（「＋」が出ない）ので、代わりにこのボタンで追加する。
            リスト表示のときだけ表示する（css/calendar.css） -->
-      <button id="reservation-add-button" class="fab">＋ 予定を追加</button>
+      <button id="reservation-add-button" class="fab">＋ 練習を追加</button>
     </section>
 
     <!-- 施設管理：カレンダーと同じ地の色とツールバーの形にして、画面がつながって見えるようにする -->
@@ -81,19 +80,7 @@
       </div>
     </section>
 
-    <!-- 通知（js/screens/notifications.js）：メンバーの参加申請を承認する -->
-    <section id="view-notifications" class="view-panel">
-      <div class="page">
-        <div class="page-toolbar">
-          <span></span>
-          <h2 class="page-title">通知</h2>
-          <button type="button" class="menu-button js-menu-button" aria-label="メニュー"></button>
-        </div>
-        <ul id="notification-list" class="card-list"></ul>
-      </div>
-    </section>
-
-    <!-- メンバー管理（js/screens/memberAdmin.js）：ロールの付け外し、メンバーから外す -->
+    <!-- メンバー管理（js/screens/memberAdmin.js）：参加申請の承認、ロールの付け外し、メンバーから外す -->
     <section id="view-members" class="view-panel">
       <div class="page">
         <div class="page-toolbar">
@@ -150,10 +137,10 @@
     </div>
   </div>
 
-  <!-- ===== 予定の登録・編集モーダル（js/screens/reservationModal.js） ===== -->
+  <!-- ===== 練習の登録・編集モーダル（js/screens/reservationModal.js） ===== -->
   <div id="reservation-modal" class="modal-overlay">
     <div class="modal">
-      <h3 id="reservation-modal-title" class="modal-title">予定の登録</h3>
+      <h3 id="reservation-modal-title" class="modal-title">練習の登録</h3>
 
       <div class="form">
         <div class="form-group">
@@ -207,7 +194,7 @@
   </div>
 
   <!-- ===== ドラムを回して値を選ぶダイアログ（js/ui/drumPicker.js）=====
-       予定の時間・施設のキャンセル期限・最少人数で共通。ほかのモーダルの上に重ねて開く。
+       練習の時間・施設のキャンセル期限・最少人数で共通。ほかのモーダルの上に重ねて開く。
        ドラムの列は開くたびに JS で作る -->
   <div id="drum-picker-modal" class="modal-overlay modal-overlay--front">
     <div class="modal">
@@ -230,18 +217,15 @@
       </div>
 
       <section>
-        <h4 class="section-label">ロール（どちらかがあると管理メニューを使えます）</h4>
+        <h4 class="section-label">ロール（管理者になると管理メニューを使えます）</h4>
+        <!-- 開発者のロールは画面からは付け外しできない（Supabase で直接設定する） -->
         <div class="role-switches">
-          <label class="role-switch">
-            <span>開発者</span>
-            <input type="checkbox" id="member-role-developer" class="switch">
-          </label>
           <label class="role-switch">
             <span>管理者</span>
             <input type="checkbox" id="member-role-admin" class="switch">
           </label>
         </div>
-        <p id="member-modal-self-note" class="member-modal-note" hidden>自分のロールは変えられません（ほかの開発者・管理者に頼んでください）</p>
+        <p id="member-modal-note" class="member-modal-note" hidden></p>
       </section>
 
       <!-- ボタンが横に並びきらないので、「メンバーから外す」は1行に分ける -->
@@ -266,7 +250,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="location-short-name">省略名（カレンダーの予定カードで使います）</label>
+          <label class="form-label" for="location-short-name">省略名（カレンダーのカードで使います）</label>
           <!-- セルの幅は全角4文字くらいしかないので、短めに -->
           <input type="text" id="location-short-name" class="form-control" maxlength="8" placeholder="例: 円山">
         </div>

@@ -56,7 +56,7 @@ export function createCalendar(element, handlers, holidays) {
         dayCellClassNames: (arg) => (holidays.has(toDateString(arg.date)) ? ['fc-day-holiday'] : []),
         eventContent: (arg) => ({ domNodes: [createEventCard(arg.event, arg.view.type.startsWith('list'))] }),
 
-        // 日付の右側に「＋」（予定の新規登録）ボタンを置く。表示するのは「予定の追加・編集」画面のときだけ（css/calendar.css）
+        // 日付の右側に「＋」（予定の新規登録）ボタンを置く。表示するのは「練習管理」画面のときだけ（css/calendar.css）
         dayCellDidMount: (arg) => {
             if (arg.view.type !== 'dayGridMonth') return;
             const date = arg.el.dataset.date; // 'YYYY-MM-DD'
@@ -75,7 +75,7 @@ function createAddButton(onClick) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'day-add-button';
-    button.setAttribute('aria-label', 'この日に予定を追加');
+    button.setAttribute('aria-label', 'この日に練習を追加');
     button.textContent = '+';
     button.addEventListener('click', onClick);
     return button;
