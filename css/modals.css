@@ -256,10 +256,40 @@
     font-size: 0.8rem;
 }
 
+/* ひとことを書いた人：横いっぱいにして、名前の右にひとことを出す（長いときは折り返す） */
+.member.has-comment {
+    flex-basis: 100%;
+    align-items: flex-start;
+    border-radius: var(--radius-md);
+}
+
+.member.has-comment .member-name {
+    flex-shrink: 0;
+    max-width: 40%;
+    line-height: 24px;
+}
+
+.member-comment {
+    min-width: 0;
+    padding-top: 4px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--color-text-muted);
+    overflow-wrap: anywhere;
+}
+
 .member-empty {
     font-size: 0.8rem;
     color: var(--color-text-muted);
     text-align: center;
+}
+
+/* 自分のひとこと（〇△×のボタンの上） */
+.attendance-comment {
+    min-height: 40px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    font-size: 1rem; /* 16px 未満だと、iPhone で入力するときに画面が拡大されてしまう */
 }
 
 /* 自分の出欠ボタン（〇・△・×） */

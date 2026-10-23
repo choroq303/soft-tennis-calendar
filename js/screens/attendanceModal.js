@@ -3,7 +3,9 @@
 //   ・予定ステータスの帯（開催未定／開催決定／キャンセル）。キャンセルの予定は出欠ボタンを隠す
 //   ・予定の情報（場所・コート・時間・備考）
 //   ・現在の人数（タップで展開すると、〇△×ごとに LINE のアイコンと名前を表示）
-//   ・自分の出欠ボタン（同じボタンをもう一度押すと回答を取り消す）
+//   ・自分の出欠ボタンと、ひとこと（例: 1時間遅れます）
+//       〇△×を押すと、ひとことも一緒に保存する。
+//       選んでいるボタンをもう一度押すと、ひとことを変えていれば保存し直し、変えていなければ回答を取り消す
 // ==========================================
 import { saveAttendance } from '../api.js';
 import { statusIconSvg, STATUS_ORDER } from '../icons.js';
@@ -20,10 +22,12 @@ const STATUS_MESSAGES = {
     cancelled: 'この練習はキャンセルになりました'
 };
 const statusButtons = modal.querySelectorAll('.attendance-button');
+const commentInput = document.getElementById('attendance-comment');
 
-// 開いている予定のID と、その予定への自分の回答
+// 開いている予定のID と、その予定への自分の回答・ひとこと
 let reservationId = null;
 let myStatus = null;
+let myComment = '';
 
 /**
  * @param {{ user: object, onSaved: () => Promise<void> }} options
@@ -32,8 +36,9 @@ let myStatus = null;
  */
 export function setupAttendanceModal({ user, onSaved }) {
     async function save(status) {
+        const comment = commentInput.value.trim();
         try {
-            await withLoading(() => saveAttendance({ reservationId, user, status }));
+            await withLoading(() => saveAttendance({ reservationId, user, status, comment }));
             closeModal(modal);
             await onSaved();
         } catch (error) {
@@ -45,8 +50,10 @@ export function setupAttendanceModal({ user, onSaved }) {
     statusButtons.forEach(button => {
         button.innerHTML = statusIconSvg(button.dataset.status, 'status-icon--large');
         button.addEventListener('click', () => {
-            // すでに選んでいるボタンをもう一度押したら回答を取り消す
-            save(button.dataset.status === myStatus ? null : button.dataset.status);
+            const status = button.dataset.status;
+            const commentChanged = commentInput.value.trim() !== myComment;
+            // 選んでいるボタンをもう一度押したとき：ひとことを変えていなければ回答を取り消す
+            save(status === myStatus && !commentChanged ? null : status);
         });
     });
 }
@@ -58,6 +65,8 @@ export function openAttendanceModal(event) {
     const props = event.extendedProps;
     reservationId = event.id;
     myStatus = props.myStatus;
+    myComment = props.myComment;
+    commentInput.value = myComment;
 
     setText('attendance-location', props.locationName);
     setText('attendance-court', props.courtNumber || '-');
@@ -98,7 +107,7 @@ function renderCounts(counts) {
     }));
 }
 
-// 展開したときのメンバー一覧（〇△×ごと）
+// 展開したときのメンバー一覧（〇△×ごと）。ひとことを書いた人は、その印の先頭に横いっぱいで並べる
 function renderMembers(members) {
     const container = document.getElementById('attendance-member-list');
     const groups = STATUS_ORDER
@@ -110,7 +119,9 @@ function renderMembers(members) {
 
             const list = document.createElement('ul');
             list.className = 'member-list';
-            list.append(...members[status].map(createMemberChip));
+            const withComment = members[status].filter(member => member.comment);
+            const withoutComment = members[status].filter(member => !member.comment);
+            list.append(...[...withComment, ...withoutComment].map(createMemberChip));
             group.appendChild(list);
             return group;
         });
@@ -124,10 +135,10 @@ function renderMembers(members) {
     container.replaceChildren(...groups);
 }
 
-// メンバー1人分（LINE のアイコン＋名前）。アイコンがない人は名前の頭文字を丸で表示する
-function createMemberChip({ name, pictureUrl }) {
+// メンバー1人分（LINE のアイコン＋名前、あればひとこと）。アイコンがない人は名前の頭文字を丸で表示する
+function createMemberChip({ name, pictureUrl, comment }) {
     const chip = document.createElement('li');
-    chip.className = 'member';
+    chip.className = comment ? 'member has-comment' : 'member';
 
     let avatar;
     if (pictureUrl?.startsWith('https://')) {
@@ -146,5 +157,11 @@ function createMemberChip({ name, pictureUrl }) {
     nameLabel.textContent = name;
 
     chip.append(avatar, nameLabel);
+    if (comment) {
+        const commentLabel = document.createElement('span');
+        commentLabel.className = 'member-comment';
+        commentLabel.textContent = comment;
+        chip.appendChild(commentLabel);
+    }
     return chip;
 }

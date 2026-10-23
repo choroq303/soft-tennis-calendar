@@ -133,6 +133,9 @@ function createInitialData() {
             status: ['ok', 'pending', 'ng'][Math.floor(i / 10)]
         });
     });
+    // ひとこと（1割くらいの人が書いている）
+    const COMMENTS = ['1時間遅れます！', '19:30ごろ着きます', '途中で抜けます', 'ラケット忘れたので貸してください', '見学だけします', '仕事しだいです', '20時までしかいられません'];
+    const randomComment = () => (random() < 0.1 ? COMMENTS[Math.floor(random() * COMMENTS.length)] : null);
     const randomStatus = () => {
         const r = random();
         return r < 0.6 ? 'ok' : r < 0.8 ? 'pending' : 'ng';
@@ -152,7 +155,8 @@ function createInitialData() {
                 user_id: member.id,
                 user_name: member.name,
                 picture_url: null,
-                status: randomStatus()
+                status: randomStatus(),
+                comment: randomComment()
             });
         });
     });

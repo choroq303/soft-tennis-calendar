@@ -43,7 +43,7 @@ export async function fetchReservations(myUserId) {
     );
 }
 
-// 出欠を予定ごとにまとめる → Map<予定ID, { members: { ok: [...], pending: [...], ng: [...] }, statusByUser: { ユーザーID: 回答 } }>
+// 出欠を予定ごとにまとめる → Map<予定ID, { members: { ok: [...], pending: [...], ng: [...] }, byUser: { ユーザーID: { status, comment } } }>
 function groupAttendance(rows) {
     const grouped = new Map();
     rows.forEach(row => {
@@ -51,14 +51,15 @@ function groupAttendance(rows) {
 
         if (!grouped.has(row.reservations_id)) grouped.set(row.reservations_id, emptyAttendance());
         const entry = grouped.get(row.reservations_id);
-        entry.members[row.status].push({ name: row.user_name || '名前未設定', pictureUrl: row.picture_url || null });
-        entry.statusByUser[row.user_id] = row.status;
+        const comment = row.comment || '';
+        entry.members[row.status].push({ name: row.user_name || '名前未設定', pictureUrl: row.picture_url || null, comment });
+        entry.byUser[row.user_id] = { status: row.status, comment };
     });
     return grouped;
 }
 
 function emptyAttendance() {
-    return { members: { ok: [], pending: [], ng: [] }, statusByUser: {} };
+    return { members: { ok: [], pending: [], ng: [] }, byUser: {} };
 }
 
 // データベースの1行を、カレンダーに表示する予定（FullCalendar のイベント）に変換する
@@ -88,7 +89,8 @@ function toCalendarEvent(reservation, attendance = emptyAttendance(), myUserId) 
             note: reservation.note ?? '',
             members: attendance.members,
             counts: Object.fromEntries(STATUS_ORDER.map(status => [status, attendance.members[status].length])),
-            myStatus: attendance.statusByUser[myUserId] ?? null
+            myStatus: attendance.byUser[myUserId]?.status ?? null,
+            myComment: attendance.byUser[myUserId]?.comment ?? ''
         }
     };
 }
@@ -125,10 +127,11 @@ export async function deleteReservation(id) {
 // ------------------------------------------
 
 /**
- * 自分の出欠を保存する。status が null なら回答を取り消す（行を削除する）
- * @param {{ reservationId: string, user: { id: string, name: string, pictureUrl: string | null }, status: 'ok' | 'pending' | 'ng' | null }} params
+ * 自分の出欠を保存する。status が null なら回答を取り消す（行を削除する。ひとことも消える）
+ * @param {{ reservationId: string, user: { id: string, name: string, pictureUrl: string | null }, status: 'ok' | 'pending' | 'ng' | null, comment: string }} params
+ *   comment … ひとこと（例: 1時間遅れます）。空なら null で保存する
  */
-export async function saveAttendance({ reservationId, user, status }) {
+export async function saveAttendance({ reservationId, user, status, comment }) {
     if (!status) {
         return supabase.from('attendance').delete()
             .eq('reservations_id', reservationId)
@@ -142,6 +145,7 @@ export async function saveAttendance({ reservationId, user, status }) {
         user_name: user.name,
         picture_url: user.pictureUrl,
         status,
+        comment: comment || null,
         update_at: new Date().toISOString()
     };
     return supabase.from('attendance')
